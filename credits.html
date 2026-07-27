@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Credits — Structured Chaos</title>
+    <meta name="description" content="Open source software and resources used across the Structured Chaos family of projects.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Open+Sans:wght@400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/site.css">
+</head>
+<body>
+<div id="global-bar" data-active="structured-chaos"></div>
+<script src="/js/global-bar.js" defer></script>
+
+<header class="site-header">
+    <div class="shell header-row">
+        <h1 class="brand">Structured Chaos</h1>
+    </div>
+</header>
+
+<section class="page-subheader">
+    <div class="shell">
+        <h2>Credits</h2>
+    </div>
+</section>
+
+<main class="page-main">
+    <div class="shell page-layout">
+        <div class="container">
+            <div class="panel panel--padded">
+                <div id="credits-content" class="body markdown-body">
+                    <p>Loading credits…</p>
+                </div>
+                <noscript>
+                    <p>This page requires JavaScript to render <code>credits.md</code>. You can read the raw file directly: <a href="/credits.md">credits.md</a>.</p>
+                </noscript>
+            </div>
+        </div>
+
+        <aside class="sidebar sidebar--sticky">
+            <div class="container-sections">
+                <section class="container-section--headed">
+                    <div class="container-section-header">Source</div>
+                    <div class="container-section-body">
+                        <div class="body">This page renders <code>credits.md</code> from this repository — the canonical source of truth for OSS used across all Structured Chaos projects.</div>
+                        <div class="body"><a href="/credits.md">View raw credits.md</a></div>
+                    </div>
+                </section>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="shell footer-row">
+        <div>Structured Chaos — umbrella site</div>
+        <div><a href="/credits.md">credits.md</a></div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js" crossorigin="anonymous"></script>
+<script>
+(function () {
+    var target = document.getElementById('credits-content');
+    if (!target || typeof window.marked === 'undefined') {
+        if (target) {
+            target.innerHTML = '<p>Could not load the markdown renderer. <a href="/credits.md">View raw credits.md</a>.</p>';
+        }
+        return;
+    }
+
+    fetch('/credits.md')
+        .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        })
+        .then(function (md) {
+            target.innerHTML = window.marked.parse(md);
+        })
+        .catch(function (err) {
+            target.innerHTML = '<p>Failed to load credits: ' + err.message + '. <a href="/credits.md">View raw credits.md</a>.</p>';
+        });
+})();
+</script>
+</body>
+</html>
