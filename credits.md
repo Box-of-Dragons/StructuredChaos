@@ -8,8 +8,8 @@ This page is the canonical source of truth for third-party code, libraries, font
 
 | Project | Repo | Stack |
 | --- | --- | --- |
-| Structured Chaos (this site) | [structured-chaos](https://github.com/Box-of-Dragons/structured-chaos) | Static HTML/CSS/JS |
-| Box of Dragons | [craftcms](https://github.com/Box-of-Dragons/craftcms) | Craft CMS 5, PHP, Twig |
+| Structured Chaos (this site) | [structured-chaos](https://github.com/Box-of-Dragons/StructuredChaos) | Static HTML/CSS/JS |
+| Box of Dragons | [craftcms](https://github.com/Box-of-Dragons/CraftCms) | Craft CMS 5, PHP, Twig |
 | KnitStitch Grid | [KnitStitch](https://github.com/Box-of-Dragons/KnitStitch) | Vite, Konva.js, SolveSpace WASM |
 | Account service | [better-auth](https://github.com/Box-of-Dragons/BetterAuth) | Next.js, Better Auth, MySQL |
 | SolveSpace WASM build | [solver-wasm](https://github.com/Box-of-Dragons/SolverWasm) | C++, CMake, Emscripten |
