@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Style Guide — Structured Chaos Family</title>
+    <link rel="stylesheet" href="css/shared.css">
+    <link id="site-theme" rel="stylesheet" href="css/site.css" disabled>
+    <style>
+        .styleguide-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 24px;
+            background: var(--tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .styleguide-bar-title {
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--body-dark);
+            margin-right: auto;
+        }
+
+        .styleguide-bar button {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--secondary);
+            color: var(--body);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .styleguide-bar button.active {
+            background: var(--primary);
+            color: var(--tertiary);
+            border-color: var(--primary);
+        }
+
+        .styleguide-main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+
+        .styleguide-section {
+            margin-top: 40px;
+        }
+
+        .styleguide-section h2 {
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .swatches {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .swatch {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .swatch-color {
+            height: 64px;
+        }
+
+        .swatch-label {
+            padding: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            color: var(--body-light);
+            background: var(--tertiary);
+            word-break: break-all;
+        }
+
+        .component-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+            margin-top: 16px;
+        }
+
+        .sample-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .zoom-sample {
+            position: relative;
+            min-height: 52px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="styleguide-bar" aria-label="Style guide sections">
+        <span class="styleguide-bar-title">Style Guide</span>
+        <button data-site="shared" data-css="" type="button" class="active">Shared</button>
+        <button data-site="sc" data-css="css/site.css" type="button">Structured Chaos</button>
+        <button data-site="bod" data-css="http://craftcms.ddev.site/css/site.css" type="button">Box of Dragons</button>
+        <button data-site="ks" data-css="http://localhost:5173/css/app.css" type="button">KnitStitch</button>
+    </nav>
+
+    <main class="styleguide-main">
+        <div class="styleguide-tab" data-site="shared">
+            <h1>Shared Styles</h1>
+            <p class="body">These components and tokens live in <code>css/shared.css</code> and are inherited by every site in the family.</p>
+
+            <section class="styleguide-section">
+                <h2>Colour Tokens</h2>
+                <div class="swatches">
+                    <div class="swatch"><div class="swatch-color" style="background: var(--primary);"></div><div class="swatch-label">--primary</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--primary-light);"></div><div class="swatch-label">--primary-light</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--primary-dark);"></div><div class="swatch-label">--primary-dark</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--secondary);"></div><div class="swatch-label">--secondary</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--secondary-light);"></div><div class="swatch-label">--secondary-light</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--secondary-dark);"></div><div class="swatch-label">--secondary-dark</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--tertiary);"></div><div class="swatch-label">--tertiary</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--tertiary-dark);"></div><div class="swatch-label">--tertiary-dark</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--body);"></div><div class="swatch-label">--body</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--body-light);"></div><div class="swatch-label">--body-light</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--body-dark);"></div><div class="swatch-label">--body-dark</div></div>
+                    <div class="swatch"><div class="swatch-color" style="background: var(--border);"></div><div class="swatch-label">--border</div></div>
+                </div>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Typography</h2>
+                <h1>Heading 1</h1>
+                <h2>Heading 2</h2>
+                <h3>Heading 3</h3>
+                <h4>Heading 4</h4>
+                <h5>Heading 5</h5>
+                <h6>Heading 6</h6>
+                <p class="body">This is body copy. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <p class="caption">This is a caption.</p>
+                <p class="subtitle">This is a subtitle.</p>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Buttons</h2>
+                <div class="component-row">
+                    <a href="#" class="button">Default button</a>
+                    <a href="#" class="button" style="background: var(--primary); color: var(--tertiary);">Primary look</a>
+                </div>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Chips</h2>
+                <div class="component-row">
+                    <span class="chip color-pair-gold">Gold</span>
+                    <span class="chip color-pair-plum">Plum</span>
+                    <span class="chip color-pair-ink">Ink</span>
+                    <span class="chip color-pair-sage">Sage</span>
+                    <span class="chip color-pair-sky">Sky</span>
+                    <span class="chip color-pair-rose">Rose</span>
+                    <span class="chip color-pair-slate">Slate</span>
+                </div>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Panels</h2>
+                <section class="container-section--headed" style="max-width: 420px;">
+                    <div class="container-section-header">Panel header</div>
+                    <div class="container-section-body">
+                        <p class="body">Panel body copy. This uses the shared panel styles that all three sites inherit.</p>
+                    </div>
+                </section>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Lists</h2>
+                <ul class="list" style="max-width: 320px;">
+                    <li>List item one</li>
+                    <li>List item two</li>
+                    <li class="sub-category">Indented sub-item</li>
+                    <li>List item three</li>
+                </ul>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Links</h2>
+                <p class="body"><a href="#">This is a text link</a> inside body copy.</p>
+            </section>
+        </div>
+
+        <div class="styleguide-tab" data-site="sc" hidden>
+            <h1>Structured Chaos</h1>
+            <p class="body">Structured Chaos is the umbrella site. It uses the shared components with a slate-blue colour theme and overrides the shell width and page spacing in <code>css/site.css</code>.</p>
+
+            <section class="styleguide-section">
+                <h2>Home project card</h2>
+                <p class="caption">The landing page uses shared <code>.home-project-grid</code> and <code>.home-project-card-link</code> styles, tinted by the site theme.</p>
+                <div class="home-project-grid" style="max-width: 420px;">
+                    <a class="home-project-card-link" href="#">
+                        <div class="panel">
+                            <div class="card-heading">Box of Dragons</div>
+                            <div class="card-excerpt">Craft project archive.</div>
+                        </div>
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <div class="styleguide-tab" data-site="bod" hidden>
+            <h1>Box of Dragons</h1>
+            <p class="body">Box of Dragons adds post-specific styles in <code>CraftCms/web/css/site.css</code> for project link labels and URLs.</p>
+
+            <section class="styleguide-section">
+                <h2>Post Links panel</h2>
+                <section class="container-section--headed" style="max-width: 320px;">
+                    <div class="container-section-header">Links</div>
+                    <div class="container-section-body">
+                        <ul class="list">
+                            <li>
+                                <div class="link-label">Pattern</div>
+                                <a class="link-url" href="#" target="_blank" rel="noopener noreferrer">https://example.com/pattern</a>
+                            </li>
+                            <li>
+                                <div class="link-label">Ravelry</div>
+                                <a class="link-url" href="#" target="_blank" rel="noopener noreferrer">https://www.ravelry.com/designs/example</a>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+            </section>
+        </div>
+
+        <div class="styleguide-tab" data-site="ks" hidden>
+            <h1>KnitStitch</h1>
+            <p class="body">KnitStitch adds app-specific UI components in <code>KnitStitch/public/css/app.css</code> for the grid editor, tool ribbon, workspace switcher, and zoom controls.</p>
+
+            <section class="styleguide-section">
+                <h2>Panel override</h2>
+                <section class="container-section--headed" style="max-width: 420px;">
+                    <div class="container-section-header">KnitStitch panel</div>
+                    <div class="container-section-body">
+                        <p class="body">KnitStitch overrides <code>.panel</code> border-radius to 8px and adds editor-specific chrome.</p>
+                    </div>
+                </section>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Workspace buttons</h2>
+                <div class="sample-row">
+                    <button type="button" class="workspace-btn active">
+                        <span class="icon">✏</span>
+                        <span class="label">Sketch</span>
+                    </button>
+                    <button type="button" class="workspace-btn">
+                        <span class="icon">□</span>
+                        <span class="label">Overlay</span>
+                    </button>
+                    <button type="button" class="workspace-btn">
+                        <span class="icon">⚙</span>
+                        <span class="label">Options</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="styleguide-section">
+                <h2>Zoom control</h2>
+                <div class="zoom-sample">
+                    <div class="zoom-control">
+                        <button type="button" class="zoom-btn">−</button>
+                        <button type="button" class="zoom-btn">+</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const tabs = document.querySelectorAll('.styleguide-tab');
+        const buttons = document.querySelectorAll('.styleguide-bar button');
+        const themeLink = document.getElementById('site-theme');
+
+        function switchSite(site, css, activeBtn) {
+            tabs.forEach(tab => tab.hidden = tab.dataset.site !== site);
+            if (css === '') {
+                themeLink.disabled = true;
+            } else {
+                themeLink.disabled = false;
+                themeLink.href = css;
+            }
+            buttons.forEach(b => b.classList.remove('active'));
+            activeBtn.classList.add('active');
+        }
+
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => switchSite(btn.dataset.site, btn.dataset.css, btn));
+        });
+
+        // Start on the Shared tab with no theme override.
+        const sharedBtn = document.querySelector('.styleguide-bar button[data-site="shared"]');
+        if (sharedBtn) switchSite('shared', '', sharedBtn);
+    </script>
+</body>
+</html>
