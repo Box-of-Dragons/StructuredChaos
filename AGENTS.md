@@ -12,7 +12,10 @@ Applies to all work in this repository. The site is served as static files by ng
 - `credits.html` — credits page that renders `credits.md` client-side with `marked.js` (CDN)
 - `credits.md` — canonical OSS credits, the single source of truth for all Structured Chaos projects
 - `js/global-bar.js` — shared site switcher bar consumed by all subdomain sites
-- `css/site.css` — site styles; design tokens are kept in sync with Box of Dragons and KnitStitch
+- `js/site-header.js` — shared site header (brand, nav, project links) consumed by subdomain sites
+- `css/shared.css` — canonical stylesheet for the whole family (design tokens, base styles, typography, layout primitives, all shared components: global bar, site header, panels, chips, color pairs, buttons, forms, lists, gallery, footer, responsive breakpoints). Every family site loads it before its own site-specific CSS.
+- `css/site.css` — StructuredChaos-specific overrides and unique components (landing cards, markdown body); loads after `css/shared.css`
+- `docs/ui.md` — canonical UI reference for the family (shared shell, JS components, tokens, layout/component classes)
 
 ## Running Locally
 
@@ -31,28 +34,39 @@ Edit `credits.md` directly. The credits page fetches it at runtime and renders i
 
 ## Shared Global Bar
 
-`js/global-bar.js` is the single source of truth for the site switcher bar. Subdomains include it via:
-
-```html
-<div id="global-bar"></div>
-<script src="https://misssponto.me.uk/js/global-bar.js" defer></script>
-```
+`js/global-bar.js` is the single source of truth for the site switcher bar. Subdomains include it via an inline loader script that picks the local dev server or production URL based on `location.hostname`. See [docs/ui.md](docs/ui.md) for the full usage pattern, local dev URL map, and how to add new sites to the bar.
 
 The site list lives in the `SITES` array at the top of `js/global-bar.js`. When adding a new subdomain or renaming one, update that array and every subdomain picks up the change on next load — no per-repo edits needed.
 
 The active link is resolved by hostname match, or by `data-active="<id>"` on the placeholder if present.
 
-## Design Tokens
+## Shared Site Header
 
-`css/site.css` defines the same `--primary`, `--body`, `--secondary`, etc. tokens as Box of Dragons (`CraftCms/web/css/site.css`) and KnitStitch (`KnitStitch/public/css/app.css`). When changing a token here, update the other two repos to keep the family visually consistent.
+`js/site-header.js` renders the site header (brand, nav, GitHub/GitLab links) from a per-page `window.SITE_HEADER` config object. Subdomain sites load it the same way as `global-bar.js`. CraftCms does NOT use this script — its nav is database-driven via Craft globals. See [docs/ui.md](docs/ui.md) for the config shape and usage.
+
+## Shared CSS
+
+`css/shared.css` is the canonical stylesheet for the whole family. It contains design tokens (`--primary`, `--body`, `--secondary`, color pairs, shadows, type scale), base styles, typography, layout primitives, and all shared components (global bar, site header, navigation, panels, chips, color pairs, buttons, forms, lists, gallery, footer, responsive breakpoints).
+
+Every family site loads it before its own site-specific CSS:
+
+- **StructuredChaos**: `<link rel="stylesheet" href="/css/shared.css">` then `<link rel="stylesheet" href="/css/site.css">`
+- **Box of Dragons**: loaded from the root site via PHP (`shared_assets_base() . '/css/shared.css'`) then `/css/site.css`
+- **KnitStitch**: loaded from the root site (local: `localhost:4000`, prod: `misssponto.me.uk`) then its own `app.css`
+
+When changing a token or component in `css/shared.css`, every site picks it up on next load — no per-repo edits needed. Site-specific CSS files only contain layout overrides (e.g. `.shell` max-width) and components unique to that site.
 
 ## Repository Structure
 
 - `index.html` — landing page
 - `credits.html` — credits page
 - `credits.md` — canonical OSS credits
-- `css/site.css` — site styles
+- `css/shared.css` — canonical family stylesheet (tokens, base, components)
+- `css/site.css` — StructuredChaos overrides and unique components (landing cards, markdown body)
 - `js/global-bar.js` — shared site switcher bar
+- `js/site-header.js` — shared site header (brand, nav, project links)
+- `docs/ui.md` — canonical UI reference for the family
+- `docs/git-rules.md` — canonical git rules for the family
 - `scripts/webhook-server.mjs` — GitHub webhook listener for VPS auto-deploy
 - `ecosystem.config.cjs` — PM2 config for the webhook server
 - `.env.example` — template for `.env` (contains `GITHUB_WEBHOOK_SECRET`)
