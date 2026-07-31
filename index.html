@@ -8,48 +8,59 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Open+Sans:wght@400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/shared.css">
     <link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
 <div id="global-bar" data-active="structured-chaos"></div>
 <script src="/js/global-bar.js" defer></script>
 
-<header class="site-header">
-    <div class="shell header-row">
-        <h1 class="brand">Structured Chaos</h1>
-    </div>
-</header>
+<script>window.SITE_HEADER = {
+    brand: 'Structured Chaos',
+    nav: [
+        { label: 'Home', href: '/' },
+        { label: 'Credits', href: '/credits.html' }
+    ],
+    github: 'https://github.com/Box-of-Dragons/StructuredChaos',
+    gitlab: 'https://gitlab.com/structured-chaos/structured-chaos'
+};</script>
+<div id="site-header"></div>
+<script src="/js/site-header.js" defer></script>
 
-<section class="page-subheader">
-    <div class="shell">
-        <h2>A family of handmade, open source web projects</h2>
+<section class="home-hero" style="--home-hero-image: url('/images/hero.jpg');">
+    <div class="shell home-hero-inner">
+        <h1>Hello There!</h1>
+        <p class="subtitle">I'm Karima</p>
     </div>
 </section>
 
-<main class="page-main">
+<main class="home-main">
     <div class="shell">
-        <div class="card-grid">
-            <div class="card">
-                <h3 class="card-heading">Box of Dragons</h3>
-                <p class="card-excerpt">Handmade makes, completed projects, and items needing new homes. A Craft CMS site for sharing craft work and finished pieces.</p>
-                <a class="card-link" href="https://boxofdragons.misssponto.me.uk/">Visit →</a>
-            </div>
-            <div class="card">
-                <h3 class="card-heading">KnitStitch Grid</h3>
-                <p class="card-excerpt">A web-based knitting pattern design tool built with Konva.js and a SolveSpace WASM constraint solver. Fusion 360-style sketch semantics in the browser.</p>
-                <a class="card-link" href="https://knitstitch.misssponto.me.uk/">Visit →</a>
-            </div>
-            <div class="card">
-                <h3 class="card-heading">Account</h3>
-                <p class="card-excerpt">Shared sign-in and account service for the Structured Chaos sites, built with Better Auth on Next.js.</p>
-                <a class="card-link" href="https://www.auth.misssponto.me.uk/">Visit →</a>
-            </div>
-            <div class="card">
-                <h3 class="card-heading">Credits</h3>
-                <p class="card-excerpt">The open source software, libraries, fonts, and tools used across every Structured Chaos project. One canonical list.</p>
-                <a class="card-link" href="/credits.html">View →</a>
-            </div>
-        </div>
+        <section class="home-intro">
+            <h2>Structured Chaos</h2>
+            <p>A family of handmade, open source web projects.</p>
+        </section>
+
+        <section class="home-project-grid" aria-label="Project highlights">
+            <a class="home-project-card-link" href="https://www.boxofdragons.misssponto.me.uk/">
+                <article class="panel panel--image-top">
+                    <img class="thumb" src="/images/card.jpg" alt="Box of Dragons">
+                    <div class="panel-body">
+                        <h3>Box of Dragons</h3>
+                        <p class="body">Handmade makes, completed projects, and items needing new homes. A Craft CMS site for sharing craft work and finished pieces.</p>
+                    </div>
+                </article>
+            </a>
+            <a class="home-project-card-link" href="https://knitstitch.misssponto.me.uk/">
+                <article class="panel panel--image-top">
+                    <img class="thumb" src="/images/card.jpg" alt="KnitStitch Grid">
+                    <div class="panel-body">
+                        <h3>KnitStitch Grid</h3>
+                        <p class="body">A web-based knitting pattern design tool built with Konva.js and a SolveSpace WASM constraint solver. Fusion 360-style sketch semantics in the browser.</p>
+                    </div>
+                </article>
+            </a>
+        </section>
     </div>
 </main>
 
