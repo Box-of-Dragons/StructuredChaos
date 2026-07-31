@@ -50,7 +50,7 @@ Functional footers are allowed only when they carry meaning for the project:
 | `style` / `ui`                        | none (revision only) | Styling / UI (no logic change)   |
 | any + `BREAKING CHANGE` footer or `!` | **major** (e.g. 1.3.0 → 2.0.0) | Breaking changes                 |
 
-> Note: individual repos may use `style` (KnitStitch) or `ui` (CraftCms) for the no-logic-change styling type. Use whichever the repo's history already follows.
+> Note: individual repos may use `style` (KnitStitch) or `ui` (BoxOfDragons) for the no-logic-change styling type. Use whichever the repo's history already follows.
 
 Commits that don't match a known type (anything not `feat`, `fix`, or breaking) increment the **revision** — the fourth version number (e.g. 1.3.0.1, 1.3.0.2). The revision resets to 0 whenever a `feat`, `fix`, or breaking change is encountered.
 
@@ -80,7 +80,7 @@ BREAKING CHANGE: v1 endpoints are no longer available.
 
 Versioning is handled per-repo by that repo's build-info generator, which reads git tags and the conventional commit log to derive a version. The generator entry point differs by stack:
 
-- **CraftCms** — `scripts/GenerateBuildInfo.php`, run via `composer build-info` (also runs automatically via `composer install` `post-install-cmd`). Outputs Twig partials under `templates/_generated/`.
+- **BoxOfDragons** — `scripts/GenerateBuildInfo.php`, run via the webhook and GitHub Actions deploy steps (generates `web/js/buildInfo.js` + `web/changelog.html`).
 - **KnitStitch** — `scripts/generate-build-info.mjs`, run via `npm run build-info` (generates `src/buildInfo.js` + `CHANGELOG.md`) or `npm run build-changelog`.
 - **StructuredChaos** — static site, no build-info generator; follow the same commit format for consistency.
 

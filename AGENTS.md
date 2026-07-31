@@ -42,7 +42,7 @@ The active link is resolved by hostname match, or by `data-active="<id>"` on the
 
 ## Shared Site Header
 
-`js/site-header.js` renders the site header (brand, nav, GitHub/GitLab links) from a per-page `window.SITE_HEADER` config object. Subdomain sites load it the same way as `global-bar.js`. CraftCms does NOT use this script — its nav is database-driven via Craft globals. See [docs/ui.md](docs/ui.md) for the config shape and usage.
+`js/site-header.js` renders the site header (brand, nav, GitHub/GitLab links) from a per-page `window.SITE_HEADER` config object. Subdomain sites load it the same way as `global-bar.js`. See [docs/ui.md](docs/ui.md) for the config shape and usage.
 
 ## Shared CSS
 

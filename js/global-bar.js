@@ -28,7 +28,7 @@
     // falling back to 5174) don't break the active link.
     var LOCAL_HREFS = {
         'structured-chaos': 'http://localhost:4000',
-        'box-of-dragons':   'http://craftcms.ddev.site',
+        'box-of-dragons':   'http://boxofdragons.ddev.site',
         'knitstitch':       'http://localhost:5173'
     };
 

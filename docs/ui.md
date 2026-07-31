@@ -7,7 +7,7 @@ This document is the canonical UI reference for the Structured Chaos family of s
 Every public page across the family follows the same shell, top to bottom:
 
 1. **Global bar** — site switcher, rendered by `js/global-bar.js`
-2. **Site header** — brand + nav + project links, rendered by `js/site-header.js` (or `site-header.twig` on CraftCms)
+2. **Site header** — brand + nav + project links, rendered by `js/site-header.js`
 3. **Page subheader** — bordered container holding the page title (`h1`)
 4. **Page content** — one or more `.panel.panel--padded` inside a `.container`
 5. **Site footer** — per-site footer
@@ -54,7 +54,7 @@ Renders the site switcher links into a placeholder element. Detects local dev an
 | Site id | Local URL | Production URL |
 | --- | --- | --- |
 | `structured-chaos` | `http://localhost:4000` | `https://misssponto.me.uk/` |
-| `box-of-dragons` | `http://craftcms.ddev.site` | `https://www.boxofdragons.misssponto.me.uk/` |
+| `box-of-dragons` | `http://boxofdragons.ddev.site` | `https://www.boxofdragons.misssponto.me.uk/` |
 | `knitstitch` | `http://localhost:5173` | `https://knitstitch.misssponto.me.uk/` |
 
 **Adding a new site to the bar:** edit the `SITES` array at the top of `js/global-bar.js`. Add the local dev URL to `LOCAL_HREFS` if the site has a local dev server. Every subdomain picks up the change on next load — no per-site edits needed.
@@ -90,7 +90,7 @@ Subdomain sites load it from the same origin as `global-bar.js` (localhost:4000 
 | `github` | no | GitHub repo URL. Omit to hide the GitHub link. |
 | `gitlab` | no | GitLab repo URL. Omit to hide the GitLab link. |
 
-**CraftCms does NOT use this script.** Its nav is database-driven via Craft globals, so it keeps its own `templates/_partials/site-header.twig` partial. The global bar still uses the shared JS.
+**BoxOfDragons** loads `site-header.js` from the root site the same way as KnitStitch (inline loader script that picks local dev or production URL). The header config is set per-page via `window.SITE_HEADER`.
 
 **Adding a new page's nav:** just update the `window.SITE_HEADER` config on that page. The active state is automatic. No changes to `site-header.js` itself are needed.
 
@@ -101,7 +101,7 @@ All three family sites share the same CSS custom properties at `:root`. When cha
 | Token file | Repo |
 | --- | --- |
 | `css/site.css` | StructuredChaos (this repo — canonical) |
-| `web/css/site.css` | CraftCms |
+| `web/css/site.css` | BoxOfDragons |
 | `public/css/app.css` | KnitStitch |
 
 ### Core tokens
@@ -294,12 +294,11 @@ Prefer generic element selectors for common semantic elements. Class-qualified s
 - Loads `global-bar.js` and `site-header.js` from same origin (`/js/...`)
 - `css/site.css` is the canonical token source
 
-### CraftCms
+### BoxOfDragons
 
-- Craft CMS 5, PHP/Twig
-- Uses `global-bar.js` via the inline loader script in `templates/_partials/global-bar.twig`
-- Does NOT use `site-header.js` — nav is database-driven via Craft globals, rendered by `templates/_partials/site-header.twig`
-- `web/css/site.css` mirrors the shared tokens
+- Plain PHP, PDO/MySQL
+- Uses both `global-bar.js` and `site-header.js` via the inline loader script in the page shell
+- `web/css/site.css` contains BoD-specific overrides; shared tokens come from `css/shared.css` on the root site
 
 ### KnitStitch
 

@@ -10,7 +10,7 @@ The umbrella site for the Structured Chaos family of projects, served at the roo
 
 | Site | Repo | Stack |
 | --- | --- | --- |
-| Box of Dragons | `craftcms` | Craft CMS 5 |
+| Box of Dragons | `BoxOfDragons` | PHP, PDO, MySQL |
 | KnitStitch Grid | `KnitStitch` | Vite, Konva.js, SolveSpace WASM |
 | Account service | `better-auth` | Next.js, Better Auth |
 
