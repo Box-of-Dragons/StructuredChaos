@@ -1,5 +1,3 @@
-# Credits
-
 Open source software and resources used across the Structured Chaos family of projects.
 
 This page is the canonical source of truth for third-party code, libraries, fonts, and tools used by the sites and apps under the Structured Chaos umbrella. Each project may also list its own dependencies in its `package.json`, `composer.json`, or build files; this page exists as a human-readable summary.
@@ -9,18 +7,17 @@ This page is the canonical source of truth for third-party code, libraries, font
 | Project | Repo | Stack |
 | --- | --- | --- |
 | Structured Chaos (this site) | [structured-chaos](https://github.com/Box-of-Dragons/StructuredChaos) | Static HTML/CSS/JS |
-| Box of Dragons | [craftcms](https://github.com/Box-of-Dragons/CraftCms) | Craft CMS 5, PHP, Twig |
+| Box of Dragons | [BoxOfDragons](https://github.com/Box-of-Dragons/BoxOfDragons) | PHP, PDO, MySQL |
 | KnitStitch Grid | [KnitStitch](https://github.com/Box-of-Dragons/KnitStitch) | Vite, Konva.js, SolveSpace WASM |
 | Account service | [better-auth](https://github.com/Box-of-Dragons/BetterAuth) | Next.js, Better Auth, MySQL |
 | SolveSpace WASM build | [solver-wasm](https://github.com/Box-of-Dragons/SolverWasm) | C++, CMake, Emscripten |
 
-## Box of Dragons (Craft CMS site)
+## Box of Dragons
 
-- [Craft CMS 5](https://craftcms.com/) — content management framework. License: proprietary (free for small sites).
-- [Yii 2](https://www.yiiframework.com/) — PHP framework (bundled with Craft). License: BSD-3-Clause.
-- [Twig](https://twig.symfony.com/) — template engine (bundled with Craft). License: BSD-3-Clause.
-- [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv) — environment loader. License: BSD-3-Clause.
-- [Cookie Consent Banner](https://github.com/adigital/cookie-consent-banner) — cookie consent plugin. License: MIT.
+- [PHP](https://www.php.net/) — server-side runtime. License: PHP-3.01.
+- [PDO](https://www.php.net/manual/en/book.pdo.php) — database access layer (built into PHP). License: PHP-3.01.
+- [MySQL](https://www.mysql.com/) — database (content migrated from the previous Craft CMS install). License: GPL-2.0.
+- [DDEV](https://ddev.com/) — local development environment (Docker-based). License: Apache-2.0.
 - [Google Fonts](https://fonts.google.com/) — Dancing Script, Open Sans, Playfair Display. License: OFL 1.1.
 
 ## KnitStitch Grid
@@ -64,7 +61,7 @@ The KnitStitch WASM solver is built from a fork of SolveSpace compiled with Emsc
 ## Tooling and infrastructure
 
 - [Node.js](https://nodejs.org/) — JavaScript runtime for build tooling and the webhook servers. License: MIT.
-- [PHP](https://www.php.net/) — runtime for Craft CMS. License: PHP-3.01.
+- [PHP](https://www.php.net/) — runtime for Box of Dragons. License: PHP-3.01.
 - [nginx](https://nginx.org/) — web server and reverse proxy on the VPS. License: BSD-2-Clause.
 - [PM2](https://pm2.keymetrics.io/) — process manager for the webhook servers and Next.js app. License: AGPL-3.0.
 - [Git](https://git-scm.com/) — version control. License: GPL-2.0.

@@ -8,35 +8,46 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Open+Sans:wght@400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/shared.css">
     <link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
 <div id="global-bar" data-active="structured-chaos"></div>
 <script src="/js/global-bar.js" defer></script>
 
-<header class="site-header">
-    <div class="shell header-row">
-        <h1 class="brand">Structured Chaos</h1>
-    </div>
-</header>
+<script>window.SITE_HEADER = {
+    brand: 'Structured Chaos',
+    nav: [
+        { label: 'Home', href: '/' },
+        { label: 'Credits', href: '/credits.html' }
+    ],
+    github: 'https://github.com/Box-of-Dragons/StructuredChaos',
+    gitlab: 'https://gitlab.com/structured-chaos/structured-chaos'
+};</script>
+<div id="site-header"></div>
+<script src="/js/site-header.js" defer></script>
 
 <section class="page-subheader">
     <div class="shell">
-        <h2>Credits</h2>
+        <div class="page-subheader-inner">
+            <h1>Credits</h1>
+        </div>
     </div>
 </section>
 
 <main class="page-main">
     <div class="shell page-layout">
         <div class="container">
-            <div class="panel panel--padded">
-                <div id="credits-content" class="body markdown-body">
+            <div id="credits-content" class="markdown-body">
+                <div class="panel panel--padded">
                     <p>Loading credits…</p>
                 </div>
-                <noscript>
-                    <p>This page requires JavaScript to render <code>credits.md</code>. You can read the raw file directly: <a href="/credits.md">credits.md</a>.</p>
-                </noscript>
             </div>
+            <noscript>
+                <div class="panel panel--padded">
+                    <p>This page requires JavaScript to render <code>credits.md</code>. You can read the raw file directly: <a href="/credits.md">credits.md</a>.</p>
+                </div>
+            </noscript>
         </div>
 
         <aside class="sidebar sidebar--sticky">
@@ -66,21 +77,61 @@
     var target = document.getElementById('credits-content');
     if (!target || typeof window.marked === 'undefined') {
         if (target) {
-            target.innerHTML = '<p>Could not load the markdown renderer. <a href="/credits.md">View raw credits.md</a>.</p>';
+            target.innerHTML = '<div class="panel panel--padded"><p>Could not load the markdown renderer. <a href="/credits.md">View raw credits.md</a>.</p></div>';
         }
         return;
     }
 
-    fetch('/credits.md')
+    // Split rendered markdown into per-heading panels inside the container,
+    // matching the KnitStitch doc page layout convention (AGENTS.md:
+    // "every headed section in the content column should live inside its
+    // own .panel.panel--padded which is wrapped by a .container").
+    function wrapContentInPanels(container) {
+        var temp = document.createElement('div');
+        while (container.firstChild) {
+            temp.appendChild(container.firstChild);
+        }
+        container.innerHTML = '';
+
+        var children = Array.prototype.slice.call(temp.childNodes);
+        var currentPanel = null;
+
+        children.forEach(function (node) {
+            if (node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() === 'hr') {
+                return;
+            }
+
+            if (node.nodeType === Node.ELEMENT_NODE && /^H[1-6]$/i.test(node.tagName)) {
+                currentPanel = document.createElement('div');
+                currentPanel.className = 'panel panel--padded';
+                container.appendChild(currentPanel);
+            }
+
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() === '') {
+                return;
+            }
+
+            if (!currentPanel) {
+                currentPanel = document.createElement('div');
+                currentPanel.className = 'panel panel--padded';
+                container.appendChild(currentPanel);
+            }
+
+            currentPanel.appendChild(node);
+        });
+    }
+
+    fetch('/credits.md?t=' + Date.now())
         .then(function (res) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.text();
         })
         .then(function (md) {
             target.innerHTML = window.marked.parse(md);
+            wrapContentInPanels(target);
         })
         .catch(function (err) {
-            target.innerHTML = '<p>Failed to load credits: ' + err.message + '. <a href="/credits.md">View raw credits.md</a>.</p>';
+            target.innerHTML = '<div class="panel panel--padded"><p>Failed to load credits: ' + err.message + '. <a href="/credits.md">View raw credits.md</a>.</p></div>';
         });
 })();
 </script>
