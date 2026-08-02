@@ -4,7 +4,7 @@
  * A small Node.js HTTP server that listens for GitHub push events,
  * verifies the HMAC-SHA256 signature, and runs the deploy commands
  * for the Structured Chaos static site:
- *   git fetch + reset --hard origin/master.
+ *   git fetch + reset --hard origin/master, then regenerate build info.
  *
  * The site is served by nginx directly from the repo working tree, so
  * there is no build step and no app process to reload.
@@ -105,10 +105,11 @@ function buildPath() {
 const DEPLOY_ENV = { ...process.env, ...env, PATH: buildPath() };
 
 // --- Deploy commands ---
-// Static site: just pull. nginx serves the working tree directly.
+// Static site: pull, then regenerate build info consumed by the shared footer.
 const DEPLOY_COMMANDS = [
   ['git', ['fetch', 'origin', 'master']],
   ['git', ['reset', '--hard', 'origin/master']],
+  ['node', ['scripts/generate-build-info.mjs', '--root=.', '--output=js/buildInfo.js']],
 ];
 
 function runDeploy() {

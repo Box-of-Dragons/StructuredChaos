@@ -64,11 +64,12 @@
     </div>
 </main>
 
-<footer class="site-footer">
-    <div class="shell footer-row">
-        <div>Structured Chaos — umbrella site</div>
-        <div><a href="/credits.html">Credits</a></div>
-    </div>
-</footer>
+<script>window.SITE_FOOTER = {
+    label: 'Structured Chaos - umbrella site',
+    links: [{ label: 'Credits', href: '/credits.html' }],
+    buildInfoSrc: '/js/buildInfo.js'
+};</script>
+<div id="site-footer"></div>
+<script src="/js/site-footer.js" defer></script>
 </body>
 </html>
