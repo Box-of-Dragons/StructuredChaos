@@ -17,7 +17,8 @@
  *     brand:  'KnitStitch',                       // required — h1 brand text
  *     nav:    [                                    // optional — nav items
  *       { label: 'Home', href: '/' },
- *       { label: 'ReadMe', href: '/readme.html' }
+ *       { label: 'ReadMe', href: '/readme.html' },
+ *       { label: 'CAD', localHref: 'http://localhost:3000/', liveHref: 'https://jsketcher.misssponto.me.uk/' }
  *     ],
  *     github: 'https://github.com/Box-of-Dragons/KnitStitch',  // optional
  *     gitlab: 'https://gitlab.com/structured-chaos/KnitStitch'  // optional
@@ -38,11 +39,36 @@
         '<path d="M4.4 14.8 6.2 9l3 4.2-4.8 1.6z"/>' +
         '<path d="M19.6 14.8 17.8 9l-3 4.2 4.8 1.6z"/></svg>';
 
+    var CHEVRON_ICON = '<svg class="site-header-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<path d="m16 14-4-4-4 4"/></svg>';
+
+    function isLocal() {
+        var host = (location.hostname || '').toLowerCase();
+        return host === 'localhost'
+            || host === '127.0.0.1'
+            || host.indexOf('.ddev.site') !== -1;
+    }
+
+    function resolveNavHref(item) {
+        if (isLocal() && item.localHref) return item.localHref;
+        if (!isLocal() && item.liveHref) return item.liveHref;
+        return item.href || item.liveHref || item.localHref || '#';
+    }
+
+    function getPathFromHref(href) {
+        try {
+            return new URL(href, location.origin).pathname;
+        } catch (e) {
+            return href;
+        }
+    }
+
     function isNavActive(href) {
         var path = location.pathname;
-        if (href === '/') return path === '/' || path === '/index.html';
+        var hrefPath = getPathFromHref(href);
+        if (hrefPath === '/') return path === '/' || path === '/index.html';
         // Normalize: ensure path starts with / and compare exact or prefix match
-        var normalized = href.charAt(0) === '/' ? href : '/' + href;
+        var normalized = hrefPath.charAt(0) === '/' ? hrefPath : '/' + hrefPath;
         return path === normalized || path.indexOf(normalized + '/') === 0;
     }
 
@@ -53,9 +79,10 @@
     function renderNav(nav) {
         if (!nav || !nav.length) return '';
         var items = nav.map(function (item) {
-            var cls = 'main-nav-link' + (isNavActive(item.href) ? ' active' : '');
+            var href = resolveNavHref(item);
+            var cls = 'main-nav-link' + (isNavActive(href) ? ' active' : '');
             return '<div class="main-nav-item">' +
-                '<a class="' + cls + '" href="' + escAttr(item.href) + '">' +
+                '<a class="' + cls + '" href="' + escAttr(href) + '">' +
                 escAttr(item.label) +
                 '</a></div>';
         }).join('');
@@ -78,13 +105,47 @@
 
     function render(placeholder, config) {
         var brand = config.brand || '';
-        var html = '<header class="site-header">' +
-            '<div class="shell header-row">' +
+        var html = '<header class="site-header" data-site-header>' +
+            '<div class="site-header__content shell header-row">' +
             '<h1 class="brand">' + escAttr(brand) + '</h1>' +
             renderNav(config.nav) +
             renderProjectLinks(config) +
+            '</div>' +
+            '<div class="site-header__handle">' +
+            '<button class="site-header-toggle" type="button" aria-label="Collapse site header" aria-expanded="true">' +
+            CHEVRON_ICON +
+            '</button>' +
             '</div></header>';
         placeholder.outerHTML = html;
+    }
+
+    function readCollapsedState() {
+        try {
+            return localStorage.getItem('structured-chaos:site-header-collapsed') === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function writeCollapsedState(collapsed) {
+        try {
+            if (collapsed) {
+                localStorage.setItem('structured-chaos:site-header-collapsed', '1');
+            } else {
+                localStorage.removeItem('structured-chaos:site-header-collapsed');
+            }
+        } catch (e) {
+            // Collapsed state is still applied for the current session.
+        }
+    }
+
+    function applyCollapsedState(header, collapsed) {
+        var button = header && header.querySelector('.site-header-toggle');
+        if (!header || !button) return;
+        header.classList.toggle('site-header--collapsed', collapsed);
+        button.setAttribute('aria-expanded', String(!collapsed));
+        button.setAttribute('aria-label', collapsed ? 'Expand site header' : 'Collapse site header');
+        writeCollapsedState(collapsed);
     }
 
     function init() {
@@ -92,6 +153,16 @@
         if (!placeholder) return;
         var config = window.SITE_HEADER || {};
         render(placeholder, config);
+
+        var header = document.querySelector('[data-site-header]');
+        if (!header) return;
+        applyCollapsedState(header, readCollapsedState());
+
+        var button = header.querySelector('.site-header-toggle');
+        if (!button) return;
+        button.addEventListener('click', function () {
+            applyCollapsedState(header, !header.classList.contains('site-header--collapsed'));
+        });
     }
 
     if (document.readyState === 'loading') {

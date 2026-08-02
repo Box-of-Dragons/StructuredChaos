@@ -44,6 +44,8 @@ The active link is resolved by hostname match, or by `data-active="<id>"` on the
 
 `js/site-header.js` renders the site header (brand, nav, GitHub/GitLab links) from a per-page `window.SITE_HEADER` config object. Subdomain sites load it the same way as `global-bar.js`. See [docs/ui.md](docs/ui.md) for the config shape and usage.
 
+The title area is collapsible. The pull-tab, chevron, collapsed state, and spacing behavior are shared chrome owned by `js/site-header.js` and `css/shared.css`; do not duplicate or override those styles in subdomain-specific CSS.
+
 ## Shared CSS
 
 `css/shared.css` is the canonical stylesheet for the whole family. It contains design tokens (`--primary`, `--body`, `--secondary`, color pairs, shadows, type scale), base styles, typography, layout primitives, and all shared components (global bar, site header, navigation, panels, chips, color pairs, buttons, forms, lists, gallery, footer, responsive breakpoints).
@@ -53,6 +55,7 @@ Every family site loads it before its own site-specific CSS:
 - **StructuredChaos**: `<link rel="stylesheet" href="/css/shared.css">` then `<link rel="stylesheet" href="/css/site.css">`
 - **Box of Dragons**: loaded from the root site via PHP (`shared_assets_base() . '/css/shared.css'`) then `/css/site.css`
 - **KnitStitch**: loaded from the root site (local: `localhost:4000`, prod: `misssponto.me.uk`) then its own `app.css`
+- **JSketcher**: loaded from the root site (local: `localhost:4000`, prod: `misssponto.me.uk`) then `web/css/site-shell.css` or `dist/css/site-shell.css`
 
 When changing a token or component in `css/shared.css`, every site picks it up on next load — no per-repo edits needed. Site-specific CSS files only contain layout overrides (e.g. `.shell` max-width) and components unique to that site.
 

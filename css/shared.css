@@ -362,7 +362,9 @@ td {
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 36px;
-    z-index: 100;
+    z-index: 130;
+    overflow: visible;
+    transition: box-shadow 180ms ease, background-color 180ms ease;
 }
 
 .header-row {
@@ -371,6 +373,12 @@ td {
     align-items: center;
     min-height: 72px;
     gap: 24px;
+}
+
+.site-header__content {
+    overflow: hidden;
+    max-height: 96px;
+    transition: opacity 160ms ease, transform 180ms ease, max-height 180ms ease, min-height 180ms ease;
 }
 
 .header-row > .brand {
@@ -481,6 +489,71 @@ td {
     gap: 8px;
     flex-wrap: wrap;
     justify-self: end;
+}
+
+.site-header__handle {
+    position: absolute;
+    right: 0;
+    bottom: -10px;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 0;
+    pointer-events: none;
+    z-index: 150;
+}
+
+.site-header-toggle {
+    position: relative;
+    width: 36px;
+    height: 18px;
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+    background: var(--tertiary);
+    box-shadow: 0 3px 8px rgba(17, 17, 17, 0.08);
+    color: var(--body);
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+.site-header-toggle-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transform: translate(-50%, calc(-50% + 1px));
+    transition: color 140ms ease, transform 180ms ease;
+}
+
+.site-header-toggle:hover {
+    background: var(--secondary-light);
+    color: var(--primary);
+}
+
+.site-header--collapsed {
+    border-bottom-color: var(--border);
+    background: var(--tertiary);
+}
+
+.site-header--collapsed .site-header__content {
+    max-height: 0;
+    min-height: 0;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+}
+
+.site-header--collapsed .site-header-toggle-icon {
+    transform: translate(-50%, calc(-50% + 1px)) rotate(180deg);
 }
 
 .project-link {
@@ -1354,6 +1427,14 @@ select:focus {
     .header-row {
         display: flex;
         flex-wrap: wrap;
+    }
+
+    .site-header__content {
+        max-height: 220px;
+    }
+
+    .site-header--collapsed .site-header__content {
+        max-height: 0;
     }
 
     .main-nav {

@@ -45,7 +45,7 @@ Renders the site switcher links into a placeholder element. Detects local dev an
 <script src="/js/global-bar.js" defer></script>
 ```
 
-**`data-active`** — the id of the current site (`structured-chaos`, `box-of-dragons`, `knitstitch`). If omitted, the active site is detected from the hostname.
+**`data-active`** — the id of the current site (`structured-chaos`, `box-of-dragons`, `knitstitch`, `jsketcher`). If omitted, the active site is detected from the hostname.
 
 **Local dev detection** — when running on `localhost`, `127.0.0.1`, or `*.ddev.site`, the bar links to local dev URLs instead of production. The active site always links to `/` (current origin root) so port shifts don't break it.
 
@@ -54,14 +54,17 @@ Renders the site switcher links into a placeholder element. Detects local dev an
 | Site id | Local URL | Production URL |
 | --- | --- | --- |
 | `structured-chaos` | `http://localhost:4000` | `https://misssponto.me.uk/` |
-| `box-of-dragons` | `http://boxofdragons.ddev.site` | `https://www.boxofdragons.misssponto.me.uk/` |
+| `box-of-dragons` | `http://boxofdragons.ddev.site` | `https://boxofdragons.misssponto.me.uk/` |
 | `knitstitch` | `http://localhost:5173` | `https://knitstitch.misssponto.me.uk/` |
+| `jsketcher` | `http://localhost:3001` | `https://jsketcher.misssponto.me.uk/` |
 
 **Adding a new site to the bar:** edit the `SITES` array at the top of `js/global-bar.js`. Add the local dev URL to `LOCAL_HREFS` if the site has a local dev server. Every subdomain picks up the change on next load — no per-site edits needed.
 
 ### `js/site-header.js` — site header (brand, nav, project links)
 
 Renders the site header from a per-page config object. The active nav item is detected automatically by matching `location.pathname`.
+
+The title area is collapsible. `site-header.js` renders a centered pull-tab on the lower edge of the header using a Lucide-style chevron SVG. The tab overlaps the content boundary instead of reserving a blank spacer row, and the collapsed state is persisted in `localStorage['structured-chaos:site-header-collapsed']`.
 
 **Usage:**
 
@@ -87,6 +90,8 @@ Subdomain sites load it from the same origin as `global-bar.js` (localhost:4000 
 | --- | --- | --- |
 | `brand` | yes | The `h1` brand text (rendered in the brand font) |
 | `nav` | no | Array of `{ label, href }` items. Omit to render a header with no nav. |
+| `nav[].localHref` | no | Local-dev URL override for a nav item. Used on `localhost`, `127.0.0.1`, and `*.ddev.site`. |
+| `nav[].liveHref` | no | Production URL override for a nav item. |
 | `github` | no | GitHub repo URL. Omit to hide the GitHub link. |
 | `gitlab` | no | GitLab repo URL. Omit to hide the GitLab link. |
 
@@ -96,13 +101,15 @@ Subdomain sites load it from the same origin as `global-bar.js` (localhost:4000 
 
 ## Design Tokens
 
-All three family sites share the same CSS custom properties at `:root`. When changing a token here, update the other two repos to keep the family visually consistent.
+All family sites share the same CSS custom properties at `:root`. `css/shared.css` in this repo is the canonical token and shared component source. Subdomain sites load it before their own site-specific CSS.
 
 | Token file | Repo |
 | --- | --- |
-| `css/site.css` | StructuredChaos (this repo — canonical) |
-| `web/css/site.css` | BoxOfDragons |
-| `public/css/app.css` | KnitStitch |
+| `css/shared.css` | StructuredChaos (canonical shared tokens and components) |
+| `css/site.css` | StructuredChaos-specific styles |
+| `web/css/site.css` | BoxOfDragons-specific styles |
+| `public/css/app.css` | KnitStitch app-specific styles |
+| `web/css/site-shell.css` | JSketcher app-layout styles only |
 
 ### Core tokens
 
@@ -258,6 +265,19 @@ GitHub/GitLab link buttons in the site header. Rendered by `site-header.js` from
 | `.project-link--github` | GitHub variant (dark icon) |
 | `.project-link--gitlab` | GitLab variant (orange icon) |
 
+### Collapsible site header
+
+Rendered by `site-header.js` and styled by `css/shared.css`.
+
+| Class | Purpose |
+| --- | --- |
+| `.site-header__handle` | Centered handle wrapper positioned on the lower header edge |
+| `.site-header-toggle` | Pull-tab button that overlaps the content boundary |
+| `.site-header-toggle-icon` | Lucide-style chevron SVG rendered inside the tab |
+| `.site-header.is-collapsed` | Collapsed state; hides the title/header content and lets the page content reclaim the space |
+
+The pull-tab is shared chrome. Site-specific CSS may control layout around the header, but must not restyle the global bar, title header, nav, project links, or collapse tab.
+
 ## Markdown Page Pattern
 
 Pages that render markdown (credits, readme, roadmap, changelog) follow this pattern:
@@ -292,7 +312,8 @@ Prefer generic element selectors for common semantic elements. Class-qualified s
 
 - Static HTML/CSS/JS, no build step
 - Loads `global-bar.js` and `site-header.js` from same origin (`/js/...`)
-- `css/site.css` is the canonical token source
+- `css/shared.css` is the canonical shared token/component source
+- `css/site.css` only contains StructuredChaos-specific overrides and landing/markdown components
 
 ### BoxOfDragons
 
@@ -304,5 +325,13 @@ Prefer generic element selectors for common semantic elements. Class-qualified s
 
 - Vite + Konva.js
 - Uses both `global-bar.js` and `site-header.js` via the inline loader script in `public/pages/partials/header.html`
-- `public/css/app.css` mirrors the shared tokens
+- Loads `css/shared.css` from StructuredChaos, then `public/css/app.css`
 - Has additional app-specific styles (ribbon bars, canvas, sketch tools) not shared with other sites
+
+### JSketcher
+
+- Browser-only CAD app served locally by webpack-dev-server on `http://localhost:3001`
+- Production is static output from `dist/`; in CloudPanel use a static site/document-root deployment, not a Node app
+- Uses both `global-bar.js` and `site-header.js` from StructuredChaos via the inline local/live loader
+- `web/css/site-shell.css` and `dist/css/site-shell.css` only contain JSketcher page-layout rules; global chrome styling remains in `css/shared.css`
+- `web/js/shared-shell-fallback.js` renders matching shared-class fallback markup only if the shared scripts fail to load
