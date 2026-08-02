@@ -57,6 +57,7 @@ Renders the site switcher links into a placeholder element. Detects local dev an
 | `box-of-dragons` | `http://boxofdragons.ddev.site` | `https://boxofdragons.misssponto.me.uk/` |
 | `knitstitch` | `http://localhost:5173` | `https://knitstitch.misssponto.me.uk/` |
 | `jsketcher` | `http://localhost:3001` | `https://jsketcher.misssponto.me.uk/` |
+| `account` / `Login` | `http://localhost:3000` | `https://auth.misssponto.me.uk/` |
 
 **Adding a new site to the bar:** edit the `SITES` array at the top of `js/global-bar.js`. Add the local dev URL to `LOCAL_HREFS` if the site has a local dev server. Every subdomain picks up the change on next load — no per-site edits needed.
 

@@ -21,7 +21,8 @@
         { id: 'structured-chaos', label: 'Structured Chaos', href: 'https://misssponto.me.uk/' },
         { id: 'box-of-dragons',   label: 'Box of Dragons',   href: 'https://boxofdragons.misssponto.me.uk/' },
         { id: 'knitstitch',       label: 'KnitStitch',       href: 'https://knitstitch.misssponto.me.uk/' },
-        { id: 'jsketcher',        label: 'JSketcher',        href: 'https://jsketcher.misssponto.me.uk/' }
+        { id: 'jsketcher',        label: 'JSketcher',        href: 'https://jsketcher.misssponto.me.uk/' },
+        { id: 'account',          label: 'Login',            href: 'https://auth.misssponto.me.uk/', align: 'right' }
     ];
 
     // Local dev URL overrides — used when isLocal() returns true.
@@ -31,7 +32,8 @@
         'structured-chaos': 'http://localhost:4000',
         'box-of-dragons':   'http://boxofdragons.ddev.site',
         'knitstitch':       'http://localhost:5173',
-        'jsketcher':        'http://localhost:3001'
+        'jsketcher':        'http://localhost:3001',
+        'account':          'http://localhost:3000'
     };
 
     function isLocal() {
@@ -50,6 +52,7 @@
         if (host.indexOf('boxofdragons') === 0) return 'box-of-dragons';
         if (host.indexOf('knitstitch') === 0) return 'knitstitch';
         if (host.indexOf('jsketcher') === 0) return 'jsketcher';
+        if (host.indexOf('auth') === 0 || host.indexOf('www.auth') === 0) return 'account';
         return '';
     }
 
@@ -69,7 +72,9 @@
         var local = isLocal();
 
         var links = SITES.map(function (site) {
-            var cls = 'global-bar-link' + (site.id === activeId ? ' active' : '');
+            var cls = 'global-bar-link'
+                + (site.id === activeId ? ' active' : '')
+                + (site.align === 'right' ? ' global-bar-link--right' : '');
             var href = resolveHref(site, activeId, local);
             return '<a class="' + cls + '" href="' + href + '">' + site.label + '</a>';
         }).join('');
