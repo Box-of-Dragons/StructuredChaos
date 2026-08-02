@@ -36,6 +36,10 @@
         'account':          'http://localhost:3000'
     };
 
+    function accountBase(local) {
+        return local ? LOCAL_HREFS.account : 'https://auth.misssponto.me.uk';
+    }
+
     function isLocal() {
         var host = (location.hostname || '').toLowerCase();
         return host === 'localhost'
@@ -83,6 +87,32 @@
         placeholder.setAttribute('aria-label', 'Site switcher');
         placeholder.className = 'global-bar';
         placeholder.innerHTML = '<div class="shell global-bar-row">' + links + '</div>';
+        hydrateAccountLink(placeholder, local);
+    }
+
+    function hydrateAccountLink(placeholder, local) {
+        var link = placeholder.querySelector('.global-bar-link--right');
+        if (!link || !window.fetch) return;
+
+        var base = accountBase(local);
+        fetch(base + '/api/auth/get-session', {
+            credentials: 'include',
+            mode: 'cors'
+        })
+            .then(function (response) {
+                if (!response.ok) return null;
+                return response.json();
+            })
+            .then(function (session) {
+                if (!session || !session.user) return;
+                var name = session.user.name || (session.user.email || '').split('@')[0] || 'Account';
+                link.textContent = name;
+                link.href = base + '/admin/users';
+                link.setAttribute('aria-label', 'Open account');
+            })
+            .catch(function () {
+                // If auth is unavailable or CORS blocks the check, keep the Login link.
+            });
     }
 
     function init() {
