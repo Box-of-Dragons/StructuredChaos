@@ -1,0 +1,70 @@
+name: Family Deploy
+
+# Reusable SSH deploy for the Box-of-Dragons family. Fetches and resets the
+# repo on the VPS, then runs the repo's own scripts/deploy.sh (if present) so
+# per-repo build steps stay versioned in each repo.
+#
+# Expects secrets (org-level or repo-level, passed via `secrets: inherit`):
+#   PROD_HOST, PROD_USER, PROD_SSH_KEY, PROD_PORT, PROD_PATH
+#
+#   jobs:
+#     deploy:
+#       uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-deploy.yml@master
+#       with:
+#         branch: master
+#       secrets: inherit
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: Branch to fetch and reset to on the server
+        type: string
+        required: true
+      prod-path:
+        description: Repo path on the server (defaults to PROD_PATH secret)
+        type: string
+        default: ''
+      deploy-script:
+        description: Repo-relative script run after git reset
+        type: string
+        default: scripts/deploy.sh
+      environment:
+        description: GitHub environment to run under
+        type: string
+        default: production
+
+concurrency:
+  group: family-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ inputs.prod-path || secrets.PROD_PATH }}"
+
+            echo "Fetching latest code on ${{ inputs.branch }}..."
+            git fetch origin ${{ inputs.branch }}
+            git reset --hard origin/${{ inputs.branch }}
+
+            if [ -f "${{ inputs.deploy-script }}" ]; then
+              bash "${{ inputs.deploy-script }}"
+            else
+              echo "No ${{ inputs.deploy-script }} found; git reset only."
+            fi
+
+            echo "Deploy completed."

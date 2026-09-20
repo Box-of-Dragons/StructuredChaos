@@ -1,0 +1,12 @@
+name: Release
+
+# Releases are always manual — Actions → Release → Run workflow.
+# All release policy lives in the shared workflow (see docs/git-rules.md).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    uses: ./.github/workflows/family-release.yml
+    secrets: inherit

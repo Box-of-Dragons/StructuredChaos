@@ -43,16 +43,16 @@ Functional footers are allowed only when they carry meaning for the project:
 |---------------------------------------|-------------|----------------------------------|
 | `feat`                                | **minor** (e.g. 1.3.0 → 1.4.0) | Features                         |
 | `fix`                                 | **patch** (e.g. 1.3.0 → 1.3.1) | Fixes                            |
-| `docs`                                | none (revision only) | Documentation                    |
-| `refactor`                            | none (revision only) | Refactors                        |
-| `test`                                | none (revision only) | Tests                            |
-| `chore`                               | none (revision only) | Maintenance                      |
-| `style` / `ui`                        | none (revision only) | Styling / UI (no logic change)   |
+| `docs`                                | none | Documentation                    |
+| `refactor`                            | none | Refactors                        |
+| `test`                                | none | Tests                            |
+| `chore`                               | none | Maintenance                      |
+| `style` / `ui`                        | none | Styling / UI (no logic change)   |
 | any + `BREAKING CHANGE` footer or `!` | **major** (e.g. 1.3.0 → 2.0.0) | Breaking changes                 |
 
 > Note: individual repos may use `style` (KnitStitch) or `ui` (BoxOfDragons) for the no-logic-change styling type. Use whichever the repo's history already follows.
 
-Commits that don't match a known type (anything not `feat`, `fix`, or breaking) increment the **revision** — the fourth version number (e.g. 1.3.0.1, 1.3.0.2). The revision resets to 0 whenever a `feat`, `fix`, or breaking change is encountered.
+Commits that don't match a release-worthy type (anything not `feat`, `fix`, or breaking) do not bump the version and do not trigger a release. Versions are always three numbers (`vX.Y.Z`) — there is no revision component.
 
 ## Breaking Changes
 
@@ -76,11 +76,52 @@ feat(api)!: remove deprecated v1 endpoints
 BREAKING CHANGE: v1 endpoints are no longer available.
 ```
 
-## Versioning Mechanics
+## Release Workflow
 
-Versioning is handled per-repo by that repo's build-info generator, which reads git tags and the conventional commit log to derive a version. The generator entry point differs by stack:
+Releases are **always manual** — never cut automatically on push. To release a project, run its **Release** workflow: GitHub → Actions → Release → Run workflow (or `gh workflow run release.yml`).
 
-- **BoxOfDragons** — `scripts/GenerateBuildInfo.php`, run via the webhook and GitHub Actions deploy steps (generates `web/js/buildInfo.js` + `web/changelog.html`).
+### Shared machinery (this repo)
+
+- `scripts/family-release.mjs` — canonical versioning engine. Reads git tags and the conventional commit log, finds the single highest pending bump, and writes a release plan (`.github/release-plan.json`) plus release notes (`.github/release-notes.md`). Optionally consumes a repo-root `release-notes.ai.json` for AI-reworded entry titles/details.
+- `.github/workflows/family-release.yml` — reusable workflow (`workflow_call`). Checks out the caller repo, sparse-checks out `family-release.mjs` from this repo, plans, creates the `vX.Y.Z` tag, and creates the GitHub Release. All release policy lives here: bot guard, should-release gating, tag format, notes format.
+- `.github/workflows/family-deploy.yml` — reusable SSH deploy (`workflow_call`). Runs `git fetch` + `git reset --hard` on the VPS, then executes the repo's own `scripts/deploy.sh` if present. Expects `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`, `PROD_PORT`, `PROD_PATH` secrets (prefer org-level so every repo inherits them).
+
+### Caller convention
+
+Every family repo has `.github/workflows/release.yml`:
+
+```yaml
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-release.yml@master
+    secrets: inherit
+```
+
+Rules for callers:
+
+- Trigger is **`workflow_dispatch` only** — do not add `push` triggers to release workflows. Push-triggered automation (lint, test, deploy) belongs in other workflow files.
+- Keep `secrets: inherit` so org secrets flow through.
+- Pin `@master` so shared changes propagate immediately; pin a tag (e.g. `@v1`) only if controlled rollout of pipeline changes is ever needed.
+- Repos that need a prepare step (dependency install, AI release notes) pass `node-version` and `prepare-command` inputs; the shared workflow exposes `OPENAI_API_KEY`, `OPENAI_RELEASE_NOTES_MODEL`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` to that step.
+
+Available `workflow_call` inputs: `create-tag`, `create-release` (both default `true`), `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
+
+Job outputs available to follow-on jobs in the caller: `release_tag`, `should_release`, `display_version` — e.g. KnitStitch's `desktop-release` job builds the portable exe and attaches it to `release_tag`.
+
+### Changing release behavior
+
+Edit `family-release.mjs` (versioning logic, notes format) or `family-release.yml` (when/how releases run) in this repo — every caller picks it up on the next run. Never reimplement release logic in a caller repo.
+
+### Per-repo build-info generators
+
+These still render the resolved version into each site's chosen format at deploy time:
+
+- **BoxOfDragons** — `scripts/GenerateBuildInfo.php`, run via `scripts/deploy.sh` (generates `web/js/buildInfo.js` + `web/changelog.html`).
 - **KnitStitch** — `scripts/generate-build-info.mjs`, run via `npm run build-info` (generates `src/buildInfo.js` + `CHANGELOG.md`) or `npm run build-changelog`.
 - **StructuredChaos** — static site, no build-info generator; follow the same commit format for consistency.
 
@@ -88,21 +129,21 @@ In all cases the generator:
 
 1. Reads all git tags matching `vX.Y.Z` and uses the latest tag as the starting version.
 2. Walks the commit log (oldest first) from the last tagged commit.
-3. Bumps the version per the rules above for each commit.
+3. Finds the single highest bump among those commits per the rules above and applies it once — that is the next release version.
 4. Outputs the resolved version and changelog in the repo's chosen format.
 
-If no tags exist, the version starts at `v1.0.0`.
+If no tags exist, the first release is always `v0.1.0`.
 
 ## Tagging
 
-Tags are optional but should be created at release milestones:
+Release tags (`vX.Y.Z`) are created automatically by the Release workflow — do not tag releases by hand. The one legitimate manual use is seeding a **baseline tag** on a repo adopting this scheme, so the next release increments from a known point rather than `v0.1.0`:
 
 ```
 git tag v1.4.0
 git push origin v1.4.0
 ```
 
-A tag pins the version at that point. All commits after the tag will increment from the tagged version.
+A tag pins the version at that point. All commits after the tag increment from the tagged version.
 
 ## Scopes
 

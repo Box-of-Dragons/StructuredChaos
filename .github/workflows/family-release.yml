@@ -1,0 +1,125 @@
+name: Family Release
+
+# Reusable release workflow for the Box-of-Dragons family. Releases are always
+# manual: callers expose only `workflow_dispatch` and delegate everything here —
+# whether a release is warranted, tag format, release notes, bot guards.
+#
+#   jobs:
+#     release:
+#       uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-release.yml@master
+#       secrets: inherit
+
+on:
+  workflow_call:
+    inputs:
+      create-tag:
+        description: Create and push the computed vX.Y.Z tag
+        type: boolean
+        default: true
+      create-release:
+        description: Create a GitHub Release from the computed tag
+        type: boolean
+        default: true
+      node-version:
+        description: Node version to set up (empty = skip setup-node)
+        type: string
+        default: ''
+      prepare-command:
+        description: Shell command run after checkout, before planning (e.g. AI notes generation)
+        type: string
+        default: ''
+      family-ref:
+        description: Ref of StructuredChaos to pull the shared release script from
+        type: string
+        default: master
+    outputs:
+      release_tag:
+        description: Tag that was (or would be) created, e.g. v1.4.0
+        value: ${{ jobs.release.outputs.release_tag }}
+      should_release:
+        description: Whether a release-worthy bump was found
+        value: ${{ jobs.release.outputs.should_release }}
+      display_version:
+        description: Full display version including revision, e.g. v1.4.0.2
+        value: ${{ jobs.release.outputs.display_version }}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: family-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Tag and release
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.plan.outputs.release_tag }}
+      should_release: ${{ steps.plan.outputs.should_release }}
+      display_version: ${{ steps.plan.outputs.display_version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out shared release tooling
+        uses: actions/checkout@v4
+        with:
+          repository: Box-of-Dragons/StructuredChaos
+          ref: ${{ inputs.family-ref }}
+          path: .family
+          sparse-checkout: |
+            scripts/family-release.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Node.js
+        if: inputs.node-version != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+
+      # Optional AI-notes env — only populated for repos that generate
+      # release-notes.ai.json in prepare-command (e.g. KnitStitch).
+      - name: Run prepare command
+        if: inputs.prepare-command != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_RELEASE_NOTES_MODEL: ${{ vars.OPENAI_RELEASE_NOTES_MODEL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+        run: ${{ inputs.prepare-command }}
+
+      - name: Plan release
+        id: plan
+        run: node .family/scripts/family-release.mjs plan --root=. --github-output
+
+      - name: Create tag
+        if: inputs.create-tag && steps.plan.outputs.should_release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag $RELEASE_TAG already exists."
+            exit 0
+          fi
+          git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+
+      - name: Create GitHub release
+        if: inputs.create-release && steps.plan.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+          NOTES_PATH: ${{ steps.plan.outputs.notes_path }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists."
+          else
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "$NOTES_PATH" --target "$GITHUB_SHA"
+          fi
