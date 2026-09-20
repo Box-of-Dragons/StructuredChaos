@@ -13,11 +13,3 @@ jobs:
     with:
       release-branch: master
     secrets: inherit
-
-  deploy:
-    needs: release
-    if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/family-deploy.yml
-    with:
-      branch: master
-    secrets: inherit

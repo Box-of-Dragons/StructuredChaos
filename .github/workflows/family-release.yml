@@ -40,6 +40,22 @@ on:
         description: Protected release branch (e.g. master). When set and the run was dispatched on another branch, the dispatch branch is merged in via PR and the tag lands on the merge commit.
         type: string
         default: ''
+      deploy:
+        description: Deploy to the VPS after a successful release run
+        type: boolean
+        default: true
+      prod-path:
+        description: Repo path on the server (defaults to PROD_PATH secret)
+        type: string
+        default: ''
+      deploy-script:
+        description: Repo-relative script run after git reset
+        type: string
+        default: scripts/deploy.sh
+      environment:
+        description: GitHub environment the deploy job runs under
+        type: string
+        default: production
       family-ref:
         description: Ref of StructuredChaos to pull the shared release script from
         type: string
@@ -197,3 +213,17 @@ jobs:
           else
             gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "$NOTES_PATH" --target "$(git rev-parse HEAD)"
           fi
+
+  # Deploy runs whenever the release job didn't fail — including runs where no
+  # release was cut (docs-only commits still ship, they just don't tag).
+  deploy:
+    name: Deploy to VPS
+    needs: release
+    if: always() && inputs.deploy && !failure() && !cancelled()
+    uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-deploy.yml@master
+    with:
+      branch: ${{ inputs.release-branch != '' && inputs.release-branch || github.ref_name }}
+      prod-path: ${{ inputs.prod-path }}
+      deploy-script: ${{ inputs.deploy-script }}
+      environment: ${{ inputs.environment }}
+    secrets: inherit
