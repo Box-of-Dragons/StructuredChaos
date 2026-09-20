@@ -146,6 +146,7 @@ jobs:
           git fetch origin "$RELEASE_BRANCH" "$HEAD_BRANCH"
           if [ "$(git rev-list --count origin/$RELEASE_BRANCH..HEAD)" -eq 0 ]; then
             echo "$RELEASE_BRANCH already up to date."
+            git checkout -B "$RELEASE_BRANCH" "origin/$RELEASE_BRANCH"
             exit 0
           fi
           gh pr create --base "$RELEASE_BRANCH" --head "$HEAD_BRANCH" \
