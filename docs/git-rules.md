@@ -80,6 +80,25 @@ BREAKING CHANGE: v1 endpoints are no longer available.
 
 Releases are **always manual** — never cut automatically on push. To release a project, run its **Release** workflow: GitHub → Actions → Release → Run workflow (or `gh workflow run release.yml`).
 
+### How a release flows
+
+```mermaid
+flowchart TD
+    A["Conventional commits pushed<br>(nothing happens automatically)"] --> B["Manual: Actions → Release → Run workflow"]
+    B --> C["family-release.yml<br>shared reusable workflow"]
+    C --> D["family-release.mjs<br>plans the release"]
+    D --> E{"Any feat / fix / breaking<br>since latest vX.Y.Z tag?"}
+    E -- "no" --> F["Stop — nothing release-worthy"]
+    E -- "yes" --> G{"Latest vX.Y.Z tag exists?"}
+    G -- "yes" --> H["Next version = tag<br>+ single highest bump"]
+    G -- "no" --> I["Next version = v0.1.0<br>(first release)"]
+    H --> J["Create tag + GitHub Release<br>with generated notes"]
+    I --> J
+    J --> K["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe, dev→master sync)"]
+    K --> L["Deploy — webhook, or family-deploy → scripts/deploy.sh"]
+    L --> M["Site renders version via<br>its own build-info generator"]
+```
+
 ### Shared machinery (this repo)
 
 - `scripts/family-release.mjs` — canonical versioning engine. Reads git tags and the conventional commit log, finds the single highest pending bump, and writes a release plan (`.github/release-plan.json`) plus release notes (`.github/release-notes.md`). Optionally consumes a repo-root `release-notes.ai.json` for AI-reworded entry titles/details.
@@ -117,15 +136,19 @@ Job outputs available to follow-on jobs in the caller: `release_tag`, `should_re
 
 Edit `family-release.mjs` (versioning logic, notes format) or `family-release.yml` (when/how releases run) in this repo — every caller picks it up on the next run. Never reimplement release logic in a caller repo.
 
-### Per-repo build-info generators
+### Versioning across the family
 
-These still render the resolved version into each site's chosen format at deploy time:
+| Repo | Release branch | Version display | Deploy | Notes |
+|---|---|---|---|---|
+| StructuredChaos | `master` | none (static site) | webhook | Hosts the shared engine + reusable workflows |
+| BoxOfDragons | `master` | `scripts/GenerateBuildInfo.php` → `web/js/buildInfo.js` + `web/changelog.html` | `family-deploy` → `scripts/deploy.sh` (webhook also configured) | Changelog entries labelled with the release segment they landed in |
+| KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | webhook | AI release notes via `prepare-command`; `desktop-release` job attaches the portable exe; `sync-master` fast-forwards `master` |
+| JSketcher | `main` | `scripts/generate-changelog.mjs` → `docs/changelog.md` + `web/changelog-fragment.html` | webhook | Fork commits only — upstream (xibyte) history excluded via `git cherry` |
+| QR | `master` | none | manual `scp` | Novelty pages, no site index |
+| BetterAuth | `master` | none | webhook (`npm ci`, `auth migrate`, `npm run build`, `pm2 reload`) | |
+| SolverWasm | `master` | — | — | Not wired: legacy tags aren't `vX.Y.Z`; seed a baseline tag (e.g. `v3.2.0`) before adding a release caller |
 
-- **BoxOfDragons** — `scripts/GenerateBuildInfo.php`, run via `scripts/deploy.sh` (generates `web/js/buildInfo.js` + `web/changelog.html`).
-- **KnitStitch** — `scripts/generate-build-info.mjs`, run via `npm run build-info` (generates `src/buildInfo.js` + `CHANGELOG.md`) or `npm run build-changelog`.
-- **StructuredChaos** — static site, no build-info generator; follow the same commit format for consistency.
-
-In all cases the generator:
+All version display generators (whatever the stack) follow the same algorithm:
 
 1. Reads all git tags matching `vX.Y.Z` and uses the latest tag as the starting version.
 2. Walks the commit log (oldest first) from the last tagged commit.
