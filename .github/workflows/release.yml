@@ -10,6 +10,8 @@ on:
 jobs:
   release:
     uses: ./.github/workflows/family-release.yml
+    permissions:
+      contents: write
     secrets: inherit
 
   # dev work reaches protected master only through a PR merge.
