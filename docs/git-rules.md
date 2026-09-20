@@ -107,15 +107,16 @@ flowchart TD
     I --> J
     J --> K["Tag + GitHub Release on<br>the master merge commit<br>(notes AI-reworded if key set)"]
     K -.-> K2["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe)"]
-    K --> L["Deploy job — family-deploy:<br>git reset + scripts/deploy.sh on the VPS"]
+    K --> L["Deploy (inside family-release) —<br>family-deploy: git reset +<br>scripts/deploy.sh on the VPS"]
+    F --> L
     L --> M["Site renders version via<br>its own build-info generator"]
 ```
 
 ### Shared machinery (this repo)
 
 - `scripts/family-release.mjs` — canonical versioning engine. Reads git tags and the conventional commit log, finds the single highest pending bump, and writes a release plan (`.github/release-plan.json`) plus release notes (`.github/release-notes.md`). With `--ai-notes` it rewords titles/details via OpenAI/OpenRouter into a repo-root `release-notes.ai.json` cache (keyed by commit sha) — no per-repo script needed, and repos without an API key fall back to heuristic titles.
-- `.github/workflows/family-release.yml` — reusable workflow (`workflow_call`). Checks out the caller repo, sparse-checks out `family-release.mjs` from this repo, plans, creates the `vX.Y.Z` tag, and creates the GitHub Release. All release policy lives here: bot guard, should-release gating, tag format, notes format.
-- `.github/workflows/family-deploy.yml` — reusable SSH deploy (`workflow_call`). Runs `git fetch` + `git fetch --tags` + `git reset --hard` on the VPS, then executes the repo's own `scripts/deploy.sh` if present. Invoked as a `deploy` job inside each caller's `release.yml` (or standalone for deploy-only runs). Expects `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`, `PROD_PORT`, `PROD_PATH` secrets (prefer org-level so every repo inherits them).
+- `.github/workflows/family-release.yml` — reusable workflow (`workflow_call`). Checks out the caller repo, sparse-checks out `family-release.mjs` from this repo, plans, syncs the release branch, creates the `vX.Y.Z` tag, creates the GitHub Release — then deploys via `family-deploy.yml` on success. All release policy lives here: bot guard, should-release gating, tag format, notes format, deploy ordering.
+- `.github/workflows/family-deploy.yml` — reusable SSH deploy (`workflow_call`). Runs `git fetch` + `git fetch --tags` + `git reset --hard` on the VPS, then executes the repo's own `scripts/deploy.sh` if present. Normally invoked as the `deploy` job inside `family-release.yml`; can also be called standalone for deploy-only runs. Expects `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`, `PROD_PORT`, `PROD_PATH` secrets (prefer org-level so every repo inherits them).
 
 ### Caller convention
 
@@ -133,17 +134,9 @@ jobs:
     with:
       release-branch: master   # main for JSketcher
     secrets: inherit
-
-  deploy:
-    needs: release
-    if: always() && !failure() && !cancelled()
-    uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-deploy.yml@master
-    with:
-      branch: master   # main for JSketcher
-    secrets: inherit
 ```
 
-The `deploy` job runs on every manual run — even when no release was cut (i.e. no commits since the last tag). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root.
+That's the whole caller — the shared workflow syncs, tags, releases, **and deploys**. Deploy runs on every manual run, even when no release was cut (i.e. no commits since the last tag). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root. Repos that must not SSH-deploy (QR — its docroot isn't a git repo) pass `deploy: false`.
 
 Rules for callers:
 
@@ -154,7 +147,7 @@ Rules for callers:
 - AI release notes are on by default (`ai-notes`). When `OPENAI_API_KEY` or `OPENROUTER_API_KEY` is set on the repo (org secrets work too), titles/details are reworded into user-facing language and the `release-notes.ai.json` cache is committed back before tagging — so site changelogs that read it stay in sync. Repos without a key silently keep heuristic titles. `project-description` tunes the prompt.
 - Repos that need a prepare step (e.g. dependency install) pass `node-version` and `prepare-command` inputs.
 
-Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes` (all default `true`), `project-description`, `release-branch`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
+Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes`, `deploy` (all default `true`), `project-description`, `release-branch`, `prod-path`, `deploy-script`, `environment`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
 
 Job outputs available to follow-on jobs in the caller: `release_tag`, `should_release`, `display_version` — e.g. KnitStitch's `desktop-release` job builds the portable exe and attaches it to `release_tag`.
 
