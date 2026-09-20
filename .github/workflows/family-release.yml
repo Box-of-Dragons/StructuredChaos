@@ -158,6 +158,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_BRANCH: ${{ inputs.release-branch }}
           HEAD_BRANCH: ${{ github.ref_name }}
+          SHOULD_RELEASE: ${{ steps.plan.outputs.should_release }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
         run: |
           git fetch origin "$RELEASE_BRANCH" "$HEAD_BRANCH"
           if [ "$(git rev-list --count origin/$RELEASE_BRANCH..HEAD)" -eq 0 ]; then
@@ -165,10 +167,15 @@ jobs:
             git checkout -B "$RELEASE_BRANCH" "origin/$RELEASE_BRANCH"
             exit 0
           fi
+          if [ "$SHOULD_RELEASE" = "true" ]; then
+            TITLE="Release $RELEASE_TAG"
+          else
+            TITLE="chore(release): merge $HEAD_BRANCH into $RELEASE_BRANCH"
+          fi
           gh pr create --base "$RELEASE_BRANCH" --head "$HEAD_BRANCH" \
-            --title "chore(release): merge $HEAD_BRANCH into $RELEASE_BRANCH" \
+            --title "$TITLE" \
             --body "Automated release sync." || true
-          gh pr merge --merge "$HEAD_BRANCH" || { sleep 5; gh pr merge --merge "$HEAD_BRANCH"; }
+          gh pr merge --merge --subject "$TITLE" "$HEAD_BRANCH" || { sleep 5; gh pr merge --merge --subject "$TITLE" "$HEAD_BRANCH"; }
 
           git fetch origin "$RELEASE_BRANCH" "$HEAD_BRANCH"
           git config user.name "github-actions[bot]"
