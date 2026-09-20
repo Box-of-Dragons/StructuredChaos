@@ -83,6 +83,14 @@ Releases are **always manual** — never cut automatically on push. To release a
 
 The Release workflow is also **the only deploy path**: it versions, tags, releases, and deploys in one run. Pushes never deploy — the GitHub→VPS webhooks were removed. (Exception: QR has no VPS repo checkout and still deploys by manual `scp`.)
 
+### Branch model
+
+- `dev` is the **default, unprotected working branch** — all commits land here; push freely.
+- `master` (`main` for JSketcher) is the **protected release branch**: a repository ruleset blocks direct pushes, force-pushes, and deletion — changes arrive only via pull request.
+- The Release workflow opens and merges that PR automatically when dispatched on `dev` (the `release-branch` input), then **tags the merge commit** — so `master`'s tip is always the released point. The result is merged back into `dev` so tags stay reachable there.
+- Dispatching on `master`/`main` directly is still allowed for hotfixes (sync is skipped, tag lands on the branch tip).
+- BetterAuth is private on the free org — GitHub blocks rulesets there, so its `master` is unprotected (discipline only).
+
 ### How a release flows
 
 ```mermaid
@@ -95,9 +103,10 @@ flowchart TD
     E -- "yes" --> G{"Latest vX.Y.Z tag exists?"}
     G -- "yes" --> H["Next version = tag<br>+ single highest bump"]
     G -- "no" --> I["Next version = v0.1.0<br>(first release)"]
-    H --> J["Create tag + GitHub Release<br>(notes AI-reworded if an<br>API key is set)"]
+    H --> J["Sync — auto-merge PR dev→master,<br>merge master back into dev"]
     I --> J
-    J --> K["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe, dev→master sync)"]
+    J --> K["Tag + GitHub Release on<br>the master merge commit<br>(notes AI-reworded if key set)"]
+    K -.-> K2["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe)"]
     K --> L["Deploy job — family-deploy:<br>git reset + scripts/deploy.sh on the VPS"]
     L --> M["Site renders version via<br>its own build-info generator"]
 ```
@@ -121,6 +130,8 @@ on:
 jobs:
   release:
     uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-release.yml@master
+    with:
+      release-branch: master   # main for JSketcher
     secrets: inherit
 
   deploy:
@@ -139,10 +150,11 @@ Rules for callers:
 - Trigger is **`workflow_dispatch` only** — do not add `push` triggers to release workflows. Push-triggered automation (lint, test, deploy) belongs in other workflow files.
 - Keep `secrets: inherit` so org secrets flow through.
 - Pin `@master` so shared changes propagate immediately; pin a tag (e.g. `@v1`) only if controlled rollout of pipeline changes is ever needed.
+- `release-branch` names the protected release branch (`master`, or `main` for JSketcher). When a run is dispatched on a different branch (normally `dev`), the shared workflow merges it into the release branch via an auto-created PR, merges the result back into the dispatch branch, then tags the merge commit — so tags live on the release branch tip.
 - AI release notes are on by default (`ai-notes`). When `OPENAI_API_KEY` or `OPENROUTER_API_KEY` is set on the repo (org secrets work too), titles/details are reworded into user-facing language and the `release-notes.ai.json` cache is committed back before tagging — so site changelogs that read it stay in sync. Repos without a key silently keep heuristic titles. `project-description` tunes the prompt.
 - Repos that need a prepare step (e.g. dependency install) pass `node-version` and `prepare-command` inputs.
 
-Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes` (all default `true`), `project-description`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
+Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes` (all default `true`), `project-description`, `release-branch`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
 
 Job outputs available to follow-on jobs in the caller: `release_tag`, `should_release`, `display_version` — e.g. KnitStitch's `desktop-release` job builds the portable exe and attaches it to `release_tag`.
 
@@ -152,15 +164,15 @@ Edit `family-release.mjs` (versioning logic, notes format) or `family-release.ym
 
 ### Versioning across the family
 
-| Repo | Release branch | Version display | Deploy | Notes |
+| Repo | Working → release branch | Version display | Deploy | Notes |
 |---|---|---|---|---|
-| StructuredChaos | `master` | none (static site) | Release → deploy job (git reset only) | Hosts the shared engine + reusable workflows |
-| BoxOfDragons | `master` | `scripts/GenerateBuildInfo.php` → `web/js/buildInfo.js` + `web/changelog.html` | Release → deploy job → `scripts/deploy.sh` | Changelog entries labelled with the release segment they landed in; `deploy.yml` remains as a manual deploy-only fallback |
-| KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | Release → deploy job → `scripts/deploy.sh` | `desktop-release` job attaches the portable exe; `sync-master` fast-forwards `master` before deploy |
-| JSketcher | `main` | `scripts/generate-changelog.mjs` → `docs/changelog.md` + `web/changelog-fragment.html` | Release → deploy job → `scripts/deploy.sh` | Fork commits only — upstream (xibyte) history excluded via `git cherry` |
-| QR | `master` | none | manual `scp` (VPS docroot is not a git repo) | Release workflow creates tag + GitHub Release only |
-| BetterAuth | `master` | none | Release → deploy job → `scripts/deploy.sh` (`npm ci`, `auth migrate`, `npm run build`, `pm2 reload`) | deploy.sh sources `.env` for `DATABASE_URL` |
-| SolverWasm | `master` | — | — | Not wired: legacy tags aren't `vX.Y.Z`; seed a baseline tag (e.g. `v3.2.0`) before adding a release caller |
+| StructuredChaos | `dev` → `master` | none (static site) | Release → deploy job (git reset only) | Hosts the shared engine + reusable workflows |
+| BoxOfDragons | `dev` → `master` | `scripts/GenerateBuildInfo.php` → `web/js/buildInfo.js` + `web/changelog.html` | Release → deploy job → `scripts/deploy.sh` | Changelog entries labelled with the release segment they landed in; `deploy.yml` remains as a manual deploy-only fallback |
+| KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | Release → deploy job → `scripts/deploy.sh` | `desktop-release` job attaches the portable exe |
+| JSketcher | `dev` → `main` | `scripts/generate-changelog.mjs` → `docs/changelog.md` + `web/changelog-fragment.html` | Release → deploy job → `scripts/deploy.sh` | Fork commits only — upstream (xibyte) history excluded via `git cherry` |
+| QR | `dev` → `master` | none | manual `scp` (VPS docroot is not a git repo) | Release workflow creates tag + GitHub Release only |
+| BetterAuth | `dev` → `master` | none | Release → deploy job → `scripts/deploy.sh` (`npm ci`, `auth migrate`, `npm run build`, `pm2 reload`) | `master` unprotected (private repo, free org); deploy.sh sources `.env` for `DATABASE_URL` |
+| SolverWasm | `dev` → `master` | — | — | Not wired: legacy tags aren't `vX.Y.Z`; seed a baseline tag (e.g. `v3.2.0`) before adding a release caller |
 
 All version display generators (whatever the stack) follow the same algorithm:
 

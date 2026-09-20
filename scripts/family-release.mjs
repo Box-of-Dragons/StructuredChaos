@@ -373,6 +373,7 @@ function getCommitsSince(root, latestTag, headRef) {
     'log',
     ...rangeArgs,
     '--reverse',
+    '--no-merges',
     '--date=short',
     '--pretty=format:%H%x1f%ad%x1f%s%x1f%B%x1e',
     '--',
