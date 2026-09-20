@@ -87,7 +87,8 @@ The Release workflow is also **the only deploy path**: it versions, tags, releas
 
 - `dev` is the **default, unprotected working branch** — all commits land here; push freely.
 - `master` (`main` for JSketcher) is the **protected release branch**: a repository ruleset blocks direct pushes, force-pushes, and deletion — changes arrive only via pull request.
-- The Release workflow opens and merges that PR automatically (the `sync` job) when dispatched on `dev`, so releasing stays one click. Dispatching on `master`/`main` directly is still allowed for hotfixes.
+- The Release workflow opens and merges that PR automatically when dispatched on `dev` (the `release-branch` input), then **tags the merge commit** — so `master`'s tip is always the released point. The result is merged back into `dev` so tags stay reachable there.
+- Dispatching on `master`/`main` directly is still allowed for hotfixes (sync is skipped, tag lands on the branch tip).
 - BetterAuth is private on the free org — GitHub blocks rulesets there, so its `master` is unprotected (discipline only).
 
 ### How a release flows
@@ -102,10 +103,10 @@ flowchart TD
     E -- "yes" --> G{"Latest vX.Y.Z tag exists?"}
     G -- "yes" --> H["Next version = tag<br>+ single highest bump"]
     G -- "no" --> I["Next version = v0.1.0<br>(first release)"]
-    H --> J["Create tag + GitHub Release<br>(notes AI-reworded if an<br>API key is set)"]
+    H --> J["Sync — auto-merge PR dev→master,<br>merge master back into dev"]
     I --> J
-    J -.-> J2["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe)"]
-    J --> K["Sync — auto-merge PR<br>dev → master (when dispatched on dev)"]
+    J --> K["Tag + GitHub Release on<br>the master merge commit<br>(notes AI-reworded if key set)"]
+    K -.-> K2["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe)"]
     K --> L["Deploy job — family-deploy:<br>git reset + scripts/deploy.sh on the VPS"]
     L --> M["Site renders version via<br>its own build-info generator"]
 ```
@@ -129,34 +130,12 @@ on:
 jobs:
   release:
     uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-release.yml@master
+    with:
+      release-branch: master   # main for JSketcher
     secrets: inherit
 
-  # dev work reaches protected master only through a PR merge.
-  sync:
-    needs: release
-    if: always() && github.ref_name == 'dev' && !failure() && !cancelled()
-    permissions:
-      contents: write
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git fetch origin master dev
-          if [ "$(git rev-list --count origin/master..origin/dev)" -eq 0 ]; then
-            exit 0
-          fi
-          gh pr create --base master --head dev \
-            --title "chore(release): merge dev into master" \
-            --body "Automated release sync." || true
-          gh pr merge --merge dev || { sleep 5; gh pr merge --merge dev; }
-
   deploy:
-    needs: [release, sync]
+    needs: release
     if: always() && !failure() && !cancelled()
     uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-deploy.yml@master
     with:
@@ -171,10 +150,11 @@ Rules for callers:
 - Trigger is **`workflow_dispatch` only** — do not add `push` triggers to release workflows. Push-triggered automation (lint, test, deploy) belongs in other workflow files.
 - Keep `secrets: inherit` so org secrets flow through.
 - Pin `@master` so shared changes propagate immediately; pin a tag (e.g. `@v1`) only if controlled rollout of pipeline changes is ever needed.
+- `release-branch` names the protected release branch (`master`, or `main` for JSketcher). When a run is dispatched on a different branch (normally `dev`), the shared workflow merges it into the release branch via an auto-created PR, merges the result back into the dispatch branch, then tags the merge commit — so tags live on the release branch tip.
 - AI release notes are on by default (`ai-notes`). When `OPENAI_API_KEY` or `OPENROUTER_API_KEY` is set on the repo (org secrets work too), titles/details are reworded into user-facing language and the `release-notes.ai.json` cache is committed back before tagging — so site changelogs that read it stay in sync. Repos without a key silently keep heuristic titles. `project-description` tunes the prompt.
 - Repos that need a prepare step (e.g. dependency install) pass `node-version` and `prepare-command` inputs.
 
-Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes` (all default `true`), `project-description`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
+Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes` (all default `true`), `project-description`, `release-branch`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
 
 Job outputs available to follow-on jobs in the caller: `release_tag`, `should_release`, `display_version` — e.g. KnitStitch's `desktop-release` job builds the portable exe and attaches it to `release_tag`.
 

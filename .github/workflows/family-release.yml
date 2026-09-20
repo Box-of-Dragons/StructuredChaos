@@ -36,6 +36,10 @@ on:
         description: Short description used in the AI prompt, e.g. "a knitting pattern design web app" (defaults to the repo name)
         type: string
         default: ''
+      release-branch:
+        description: Protected release branch (e.g. master). When set and the run was dispatched on another branch, the dispatch branch is merged in via PR and the tag lands on the merge commit.
+        type: string
+        default: ''
       family-ref:
         description: Ref of StructuredChaos to pull the shared release script from
         type: string
@@ -53,6 +57,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: family-release-${{ github.ref }}
@@ -119,6 +124,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "${{ github.ref_name }}"
           git add release-notes.ai.json
           if git diff --cached --quiet; then
             echo "AI note cache unchanged."
@@ -126,6 +132,43 @@ jobs:
           fi
           git commit -m "chore(release-notes): update AI release notes"
           git push
+
+      # Protected release branches only accept merges via PR. Sync the
+      # dispatch branch in, then merge the result back so the dispatch
+      # branch contains the merge commit (and therefore the tag).
+      - name: Sync into release branch via pull request
+        if: inputs.release-branch != '' && github.ref_name != inputs.release-branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BRANCH: ${{ inputs.release-branch }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+        run: |
+          git fetch origin "$RELEASE_BRANCH" "$HEAD_BRANCH"
+          if [ "$(git rev-list --count origin/$RELEASE_BRANCH..HEAD)" -eq 0 ]; then
+            echo "$RELEASE_BRANCH already up to date."
+            exit 0
+          fi
+          gh pr create --base "$RELEASE_BRANCH" --head "$HEAD_BRANCH" \
+            --title "chore(release): merge $HEAD_BRANCH into $RELEASE_BRANCH" \
+            --body "Automated release sync." || true
+          gh pr merge --merge "$HEAD_BRANCH" || { sleep 5; gh pr merge --merge "$HEAD_BRANCH"; }
+
+          git fetch origin "$RELEASE_BRANCH" "$HEAD_BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$RELEASE_BRANCH" "origin/$RELEASE_BRANCH"
+          git checkout -B "$HEAD_BRANCH" "origin/$HEAD_BRANCH"
+          git merge "origin/$RELEASE_BRANCH" -m "chore(release): merge $RELEASE_BRANCH back into $HEAD_BRANCH"
+          git push origin "$HEAD_BRANCH"
+          git checkout "$RELEASE_BRANCH"
+
+      - name: Check out release branch
+        if: inputs.release-branch != '' && github.ref_name == inputs.release-branch
+        env:
+          RELEASE_BRANCH: ${{ inputs.release-branch }}
+        run: |
+          git fetch origin "$RELEASE_BRANCH"
+          git checkout -B "$RELEASE_BRANCH" "origin/$RELEASE_BRANCH"
 
       - name: Create tag
         if: inputs.create-tag && steps.plan.outputs.should_release == 'true'
@@ -151,5 +194,5 @@ jobs:
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "Release $RELEASE_TAG already exists."
           else
-            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "$NOTES_PATH" --target "$GITHUB_SHA"
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "$NOTES_PATH" --target "$(git rev-parse HEAD)"
           fi
