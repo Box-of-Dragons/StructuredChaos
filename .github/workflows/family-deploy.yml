@@ -62,6 +62,11 @@ jobs:
             git fetch origin --tags --force
             git reset --hard origin/${{ inputs.branch }}
 
+            # Load the site user's nvm so deploy.sh sees its node/npm/pm2
+            # (non-interactive SSH sessions don't read ~/.bashrc).
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
             if [ -f "${{ inputs.deploy-script }}" ]; then
               bash "${{ inputs.deploy-script }}"
             else
