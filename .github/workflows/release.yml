@@ -10,6 +10,9 @@ on:
 jobs:
   release:
     uses: ./.github/workflows/family-release.yml
+    permissions:
+      contents: write
+      pull-requests: write
     with:
       release-branch: master
     secrets: inherit

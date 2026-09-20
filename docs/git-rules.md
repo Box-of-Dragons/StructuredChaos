@@ -131,12 +131,17 @@ on:
 jobs:
   release:
     uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-release.yml@master
+    permissions:
+      contents: write        # tag pushes, branch back-merges
+      pull-requests: write   # the dev → release-branch sync PR
     with:
       release-branch: master   # main for JSketcher
     secrets: inherit
 ```
 
-That's the whole caller — the shared workflow syncs, tags, releases, **and deploys**. Deploy runs on every manual run, even when no release was cut (i.e. no commits since the last tag). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root. Repos that must not SSH-deploy (QR — its docroot isn't a git repo) pass `deploy: false`.
+The `permissions` grant is **required**: repos default `GITHUB_TOKEN` to read-only, and a reusable workflow can only reduce permissions through the call chain — never elevate. Without it the run dies at startup with "requesting 'contents: write, pull-requests: write', but is only allowed 'contents: read, pull-requests: none'".
+
+That's the whole caller — the shared workflow syncs, tags, releases, **and deploys**. Deploy runs on every manual run, even when no release was cut (i.e. no commits since the last tag). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root. Repos that must not SSH-deploy pass `deploy: false`.
 
 Rules for callers:
 
@@ -163,7 +168,7 @@ Edit `family-release.mjs` (versioning logic, notes format) or `family-release.ym
 | BoxOfDragons | `dev` → `master` | `scripts/GenerateBuildInfo.php` → `web/js/buildInfo.js` + `web/changelog.html` | Release → deploy job → `scripts/deploy.sh` | Changelog entries labelled with the release segment they landed in; `deploy.yml` remains as a manual deploy-only fallback |
 | KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | Release → deploy job → `scripts/deploy.sh` | `desktop-release` job attaches the portable exe |
 | JSketcher | `dev` → `main` | `scripts/generate-changelog.mjs` → `docs/changelog.md` + `web/changelog-fragment.html` | Release → deploy job → `scripts/deploy.sh` | Fork commits only — upstream (xibyte) history excluded via `git cherry` |
-| QR | `dev` → `master` | none | manual `scp` (VPS docroot is not a git repo) | Release workflow creates tag + GitHub Release only |
+| QR | `dev` → `master` | none | Release → deploy job (git reset only — docroot is a `master` checkout) | No build step |
 | BetterAuth | `dev` → `master` | none | Release → deploy job → `scripts/deploy.sh` (`npm ci`, `auth migrate`, `npm run build`, `pm2 reload`) | `master` unprotected (private repo, free org); deploy.sh sources `.env` for `DATABASE_URL` |
 | SolverWasm | `dev` → `master` | — | — | Not wired: legacy tags aren't `vX.Y.Z`; seed a baseline tag (e.g. `v3.2.0`) before adding a release caller |
 
