@@ -43,16 +43,17 @@ Functional footers are allowed only when they carry meaning for the project:
 |---------------------------------------|-------------|----------------------------------|
 | `feat`                                | **minor** (e.g. 1.3.0 → 1.4.0) | Features                         |
 | `fix`                                 | **patch** (e.g. 1.3.0 → 1.3.1) | Fixes                            |
-| `docs`                                | none | Documentation                    |
-| `refactor`                            | none | Refactors                        |
-| `test`                                | none | Tests                            |
-| `chore`                               | none | Maintenance                      |
-| `style` / `ui`                        | none | Styling / UI (no logic change)   |
+| `docs`                                | **patch** | Documentation                    |
+| `refactor`                            | **patch** | Refactors                        |
+| `test`                                | **patch** | Tests                            |
+| `chore`                               | **patch** | Maintenance                      |
+| `style` / `ui`                        | **patch** | Styling / UI (no logic change)   |
+| anything else / non-conventional      | **patch** | Other changes                    |
 | any + `BREAKING CHANGE` footer or `!` | **major** (e.g. 1.3.0 → 2.0.0) | Breaking changes                 |
 
 > Note: individual repos may use `style` (KnitStitch) or `ui` (BoxOfDragons) for the no-logic-change styling type. Use whichever the repo's history already follows.
 
-Commits that don't match a release-worthy type (anything not `feat`, `fix`, or breaking) do not bump the version and do not trigger a release. Versions are always three numbers (`vX.Y.Z`) — there is no revision component.
+The rule is simple: `feat` → minor, breaking → major, **everything else → patch**. Any commit since the latest tag warrants a release — only a run with zero new commits cuts no version. Versions are always three numbers (`vX.Y.Z`) — there is no revision component.
 
 ## Breaking Changes
 
@@ -89,8 +90,8 @@ flowchart TD
     A["Conventional commits pushed<br>(nothing happens automatically)"] --> B["Manual: Actions → Release → Run workflow"]
     B --> C["family-release.yml<br>shared reusable workflow"]
     C --> D["family-release.mjs<br>plans the release"]
-    D --> E{"Any feat / fix / breaking<br>since latest vX.Y.Z tag?"}
-    E -- "no" --> F["Stop — nothing release-worthy"]
+    D --> E{"Any commits since<br>latest vX.Y.Z tag?"}
+    E -- "no" --> F["Skip tag — deploy still runs"]
     E -- "yes" --> G{"Latest vX.Y.Z tag exists?"}
     G -- "yes" --> H["Next version = tag<br>+ single highest bump"]
     G -- "no" --> I["Next version = v0.1.0<br>(first release)"]
@@ -131,7 +132,7 @@ jobs:
     secrets: inherit
 ```
 
-The `deploy` job runs on every manual run — even when no release was cut (e.g. docs-only changes still ship). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root.
+The `deploy` job runs on every manual run — even when no release was cut (i.e. no commits since the last tag). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root.
 
 Rules for callers:
 
@@ -164,7 +165,7 @@ All version display generators (whatever the stack) follow the same algorithm:
 
 1. Reads all git tags matching `vX.Y.Z` and uses the latest tag as the starting version.
 2. Walks the commit log (oldest first) from the last tagged commit.
-3. Finds the single highest bump among those commits per the rules above and applies it once — that is the next release version.
+3. Finds the single highest bump among those commits per the rules above (`feat` → minor, breaking → major, everything else → patch) and applies it once — that is the next release version.
 4. Outputs the resolved version and changelog in the repo's chosen format.
 
 If no tags exist, the first release is always `v0.1.0`.

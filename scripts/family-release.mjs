@@ -7,9 +7,10 @@
  * of this repository.
  *
  * Versioning semantics (docs/git-rules.md):
- *   - feat -> minor, fix -> patch, BREAKING CHANGE / `!` -> major
+ *   - feat -> minor, BREAKING CHANGE / `!` -> major
+ *   - every other commit -> patch (any commit bumps at least patch)
  *   - the single highest bump across commits since the latest vX.Y.Z tag
- *     is applied once; other commit types do not bump
+ *     is applied once
  *   - if no tag exists the first release is always v0.1.0
  *
  * Side-effect-light: writes a JSON plan and a markdown release body, and
@@ -106,8 +107,7 @@ function isBreaking(subject, body = '') {
 function getCommitBump(subject, body = '') {
   if (isBreaking(subject, body)) return 'major';
   if (/^feat(\([^)]+\))?!?:/i.test(subject)) return 'minor';
-  if (/^fix(\([^)]+\))?!?:/i.test(subject)) return 'patch';
-  return 'none';
+  return 'patch';
 }
 
 function getChangelogGroup(subject, body = '') {
@@ -251,7 +251,8 @@ function buildPlan(root, headRef, notesPath, jsonPath) {
   const aiReleaseNotes = loadAiReleaseNotes(root);
 
   // Single-bump semantics: the highest bump across all commits since the
-  // latest tag is applied once. Non-release commits do not bump.
+  // latest tag is applied once. Any commit counts — non-feat/breaking types
+  // bump patch.
   let bumpType = 'none';
   const rank = { none: 0, patch: 1, minor: 2, major: 3 };
 
@@ -323,7 +324,7 @@ function buildPlan(root, headRef, notesPath, jsonPath) {
     notes.push(
       '# No release planned',
       '',
-      'No release-worthy Conventional Commit changes (feat, fix, or breaking) were found',
+      'No commits were found',
       latestTag ? `since ${latestTag.tag}.` : 'in the history.',
       '',
     );
