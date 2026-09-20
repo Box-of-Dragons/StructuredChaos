@@ -65,7 +65,7 @@ jobs:
             # Load the site user's nvm so deploy.sh sees its node/npm/pm2
             # (non-interactive SSH sessions don't read ~/.bashrc).
             export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            if [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh"; fi
 
             if [ -f "${{ inputs.deploy-script }}" ]; then
               bash "${{ inputs.deploy-script }}"
