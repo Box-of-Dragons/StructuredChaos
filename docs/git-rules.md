@@ -165,7 +165,7 @@ Feature branches land on `dev` via squash-merged PRs so `dev`'s log stays one co
 - **Body** — the bullet list of commit subjects, oldest first.
 - **`merge` input** — when ticked, the workflow squash-merges immediately via `gh pr merge --squash --subject --body`, so the landed commit is `<title> (#<pr>)` + commit titles — the `(#n)` suffix makes PR-sourced commits obvious in the log. Unticked, the PR waits for a manual squash merge in the UI — GitHub prefills the same shape.
 
-Caller shape is the same as `release.yml`: `workflow_dispatch` with `branch`/`merge` inputs, `permissions: contents: write, pull-requests: write`, `secrets: inherit`, pinned `@master`.
+Caller shape is the same as `release.yml`: `workflow_dispatch` with a `merge` input, `permissions: contents: write, pull-requests: write`, `secrets: inherit`, pinned `@master` — and `source-branch: ${{ github.ref_name }}`, so the source is whichever branch the run is dispatched from ("Use workflow from" in the UI).
 
 ### Changing release behavior
 
