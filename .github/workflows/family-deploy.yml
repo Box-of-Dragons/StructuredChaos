@@ -54,7 +54,7 @@ jobs:
           port: ${{ secrets.PROD_PORT }}
           script_stop: true
           script: |
-            set -euo pipefail
+            set -euxo pipefail
             cd "${{ inputs.prod-path || secrets.PROD_PATH }}"
 
             echo "Fetching latest code on ${{ inputs.branch }}..."
