@@ -115,6 +115,16 @@ jobs:
         if: inputs.prepare-command != ''
         run: ${{ inputs.prepare-command }}
 
+      # The AI note cache lives on the `release-notes-cache` orphan branch so
+      # it never appears in dev/master commit history — restore it before
+      # planning so reworded titles stay stable across runs.
+      - name: Restore AI release-note cache
+        if: inputs.ai-notes
+        run: |
+          if git fetch --depth=1 origin release-notes-cache 2>/dev/null; then
+            git show FETCH_HEAD:release-notes.ai.json > release-notes.ai.json 2>/dev/null || true
+          fi
+
       - name: Plan release
         id: plan
         env:
@@ -127,11 +137,10 @@ jobs:
           --ai-notes=${{ inputs.ai-notes }}
           --project-description="${{ inputs.project-description }}"
 
-      # Commit the AI note cache before tagging so the tag (and any deployed
-      # site changelog that reads it) includes the fresh reworded notes.
-      # chore(release-notes) commits are skipped by the planner, so this never
-      # counts toward a bump.
-      - name: Commit AI release-note cache
+      # Save the refreshed AI note cache back to the release-notes-cache
+      # orphan branch — written via plumbing so the working branches never
+      # see a chore(release-notes) commit.
+      - name: Save AI release-note cache
         if: inputs.ai-notes && steps.plan.outputs.should_release == 'true'
         run: |
           if [ ! -f release-notes.ai.json ]; then
@@ -140,14 +149,18 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "${{ github.ref_name }}"
-          git add release-notes.ai.json
-          if git diff --cached --quiet; then
-            echo "AI note cache unchanged."
-            exit 0
+          BLOB=$(git hash-object -w release-notes.ai.json)
+          TREE=$(printf '100644 blob %s\trelease-notes.ai.json\n' "$BLOB" | git mktree)
+          PARENT_ARGS=""
+          if git fetch --depth=1 origin release-notes-cache 2>/dev/null; then
+            if [ "$(git rev-parse 'FETCH_HEAD^{tree}')" = "$TREE" ]; then
+              echo "AI note cache unchanged."
+              exit 0
+            fi
+            PARENT_ARGS="-p FETCH_HEAD"
           fi
-          git commit -m "chore(release-notes): update AI release notes"
-          git push
+          COMMIT=$(git commit-tree "$TREE" $PARENT_ARGS -m "chore(release-notes): update AI release notes")
+          git push origin "$COMMIT:refs/heads/release-notes-cache"
 
       # Protected release branches only accept merges via PR. Sync the
       # dispatch branch in, then merge the result back so the dispatch

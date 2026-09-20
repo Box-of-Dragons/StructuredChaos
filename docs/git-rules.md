@@ -150,7 +150,7 @@ Rules for callers:
 - Keep `secrets: inherit` so org secrets flow through.
 - Pin `@master` so shared changes propagate immediately; pin a tag (e.g. `@v1`) only if controlled rollout of pipeline changes is ever needed.
 - `release-branch` names the protected release branch (`master`, or `main` for JSketcher). When a run is dispatched on a different branch (normally `dev`), the shared workflow merges it into the release branch via an auto-created PR, merges the result back into the dispatch branch, then tags the merge commit — so tags live on the release branch tip.
-- AI release notes are on by default (`ai-notes`). When `OPENAI_API_KEY` or `OPENROUTER_API_KEY` is set on the repo (org secrets work too), titles/details are reworded into user-facing language and the `release-notes.ai.json` cache is committed back before tagging — so site changelogs that read it stay in sync. Repos without a key silently keep heuristic titles. `project-description` tunes the prompt.
+- AI release notes are on by default (`ai-notes`). When `OPENAI_API_KEY` or `OPENROUTER_API_KEY` is set on the repo (org secrets work too), titles/details are reworded into user-facing language and the `release-notes.ai.json` cache is saved to a dedicated `release-notes-cache` orphan branch — keeping `chore(release-notes)` commits out of the working-branch history. Repos without a key silently keep heuristic titles. `project-description` tunes the prompt.
 - Repos that need a prepare step (e.g. dependency install) pass `node-version` and `prepare-command` inputs.
 
 Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes`, `deploy` (all default `true`), `project-description`, `release-branch`, `prod-path`, `deploy-script`, `environment`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
@@ -165,7 +165,7 @@ Feature branches land on `dev` via squash-merged PRs so `dev`'s log stays one co
 - **Body** — the bullet list of commit subjects, oldest first.
 - **`merge` input** — when ticked, the workflow squash-merges immediately via `gh pr merge --squash --subject --body`, so the landed commit is `<title> (#<pr>)` + commit titles — the `(#n)` suffix makes PR-sourced commits obvious in the log. Unticked, the PR waits for a manual squash merge in the UI — GitHub prefills the same shape.
 
-Caller shape is the same as `release.yml`: `workflow_dispatch` with `branch`/`merge` inputs, `permissions: contents: write, pull-requests: write`, `secrets: inherit`, pinned `@master`.
+Caller shape is the same as `release.yml`: `workflow_dispatch` with a `merge` input, `permissions: contents: write, pull-requests: write`, `secrets: inherit`, pinned `@master` — and `source-branch: ${{ github.ref_name }}`, so the source is whichever branch the run is dispatched from ("Use workflow from" in the UI).
 
 ### Changing release behavior
 
