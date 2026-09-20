@@ -52,9 +52,11 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           port: ${{ secrets.PROD_PORT }}
-          script_stop: true
+          # NOTE: no script_stop — drone-ssh splits the script per line and
+          # injects $? checks, which breaks multi-line if/else blocks.
+          # set -e handles stop-on-error correctly.
           script: |
-            set -euxo pipefail
+            set -euo pipefail
             cd "${{ inputs.prod-path || secrets.PROD_PATH }}"
 
             echo "Fetching latest code on ${{ inputs.branch }}..."
