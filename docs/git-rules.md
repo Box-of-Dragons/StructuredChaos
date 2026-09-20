@@ -131,10 +131,15 @@ on:
 jobs:
   release:
     uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-release.yml@master
+    permissions:
+      contents: write        # tag pushes, branch back-merges
+      pull-requests: write   # the dev → release-branch sync PR
     with:
       release-branch: master   # main for JSketcher
     secrets: inherit
 ```
+
+The `permissions` grant is **required**: repos default `GITHUB_TOKEN` to read-only, and a reusable workflow can only reduce permissions through the call chain — never elevate. Without it the run dies at startup with "requesting 'contents: write, pull-requests: write', but is only allowed 'contents: read, pull-requests: none'".
 
 That's the whole caller — the shared workflow syncs, tags, releases, **and deploys**. Deploy runs on every manual run, even when no release was cut (i.e. no commits since the last tag). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root. Repos that must not SSH-deploy (QR — its docroot isn't a git repo) pass `deploy: false`.
 
