@@ -72,6 +72,7 @@ When changing a token or component in `css/shared.css`, every site picks it up o
 - `docs/git-rules.md` — canonical git rules for the family
 - `scripts/family-release.mjs` — canonical release planner (conventional-commit versioning, shared by all family repos)
 - `.github/workflows/family-release.yml` — reusable release workflow (plan → tag → GitHub Release); family repos call it via thin `release.yml` callers
+- `.github/workflows/family-pr.yml` — reusable PR-to-dev workflow (conventional title + commit-title body, optional squash merge); family repos call it via thin `pr.yml` callers
 - `.github/workflows/family-deploy.yml` — reusable SSH deploy workflow (git reset + repo's `scripts/deploy.sh`)
 - `scripts/webhook-server.mjs` — GitHub webhook listener for VPS auto-deploy
 - `ecosystem.config.cjs` — PM2 config for the webhook server

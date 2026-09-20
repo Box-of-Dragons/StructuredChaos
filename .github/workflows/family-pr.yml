@@ -1,0 +1,146 @@
+name: Family PR
+
+# Reusable "open a PR into the working branch" workflow for the
+# Box-of-Dragons family. Callers expose only `workflow_dispatch` and delegate
+# everything here — title derivation, commit-list body, optional squash merge.
+#
+#   jobs:
+#     pr:
+#       uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-pr.yml@master
+#       secrets: inherit
+#
+# PR title: the commit subject itself when the branch is one commit ahead,
+# otherwise the most significant conventional subject (feat > fix > first
+# conventional), marked with `!` when any commit in the range is breaking.
+# PR body: the bullet list of commit subjects — also reused verbatim as the
+# squash-merge commit body, so the landed commit keeps every title. The
+# squash subject gets a ` (#n)` suffix so PR-sourced commits are obvious.
+
+on:
+  workflow_call:
+    inputs:
+      source-branch:
+        description: Branch to PR into the base branch
+        required: true
+        type: string
+      base-branch:
+        description: Target branch (the working branch)
+        type: string
+        default: dev
+      merge:
+        description: Squash-merge the PR immediately after opening it
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: family-pr-${{ inputs.source-branch }}-${{ inputs.base-branch }}
+  cancel-in-progress: false
+
+jobs:
+  pr:
+    name: Open pull request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive PR title and body
+        id: meta
+        env:
+          SOURCE: ${{ inputs.source-branch }}
+          BASE: ${{ inputs.base-branch }}
+        run: |
+          set -euo pipefail
+          if [ "$SOURCE" = "$BASE" ]; then
+            echo "::error::Source and base branch are the same ('$SOURCE')."
+            exit 1
+          fi
+          git fetch origin "$BASE"
+          if ! git ls-remote --exit-code --heads origin "$SOURCE" >/dev/null 2>&1; then
+            echo "::error::Branch '$SOURCE' not found on origin."
+            exit 1
+          fi
+          git fetch origin "$SOURCE"
+
+          mapfile -t SUBJECTS < <(git log --reverse --format=%s "origin/$BASE..origin/$SOURCE")
+          if [ "${#SUBJECTS[@]}" -eq 0 ]; then
+            echo "::error::'$SOURCE' has no commits ahead of '$BASE' — nothing to PR."
+            exit 1
+          fi
+
+          pick() {
+            local pat="$1" s
+            for s in "${SUBJECTS[@]}"; do
+              if [[ "$s" =~ $pat ]]; then printf '%s' "$s"; return 0; fi
+            done
+            return 1
+          }
+
+          if [ "${#SUBJECTS[@]}" -eq 1 ]; then
+            TITLE="${SUBJECTS[0]}"
+          else
+            TITLE="$(pick '^feat(\([^)]*\))?!?:')" \
+              || TITLE="$(pick '^fix(\([^)]*\))?!?:')" \
+              || TITLE="$(pick '^[a-zA-Z]+(\([^)]*\))?!?:')" \
+              || TITLE="chore: merge $SOURCE into $BASE"
+          fi
+
+          # Any breaking commit makes the whole PR breaking — flag the title.
+          BREAKING_RE='^[a-zA-Z]+(\([^)]*\))?!:'
+          SCOPED_RE='^[a-zA-Z]+\([^)]*\):'
+          PLAIN_RE='^[a-zA-Z]+:'
+          if ! [[ "$TITLE" =~ $BREAKING_RE ]] \
+             && { git log --format=%s "origin/$BASE..origin/$SOURCE" | grep -qE "$BREAKING_RE" \
+               || git log --format=%B "origin/$BASE..origin/$SOURCE" | grep -q '^BREAKING CHANGE'; }; then
+            if [[ "$TITLE" =~ $SCOPED_RE ]]; then
+              TITLE="${TITLE/):/)!:}"
+            elif [[ "$TITLE" =~ $PLAIN_RE ]]; then
+              TITLE="${TITLE/:/!:}"
+            fi
+          fi
+
+          {
+            echo "title=$TITLE"
+            echo "body<<EOF"
+            printf -- '- %s\n' "${SUBJECTS[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open or update pull request
+        id: open
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE: ${{ inputs.source-branch }}
+          BASE: ${{ inputs.base-branch }}
+          TITLE: ${{ steps.meta.outputs.title }}
+          BODY: ${{ steps.meta.outputs.body }}
+        run: |
+          set -euo pipefail
+          EXISTING="$(gh pr list --head "$SOURCE" --base "$BASE" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh pr edit "$EXISTING" --title "$TITLE" --body "$BODY"
+            PR_URL="$(gh pr view "$EXISTING" --json url --jq .url)"
+            echo "Updated existing PR #$EXISTING."
+          else
+            PR_URL="$(gh pr create --base "$BASE" --head "$SOURCE" --title "$TITLE" --body "$BODY")"
+          fi
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "number=${PR_URL##*/}" >> "$GITHUB_OUTPUT"
+          echo "PR: $PR_URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Squash merge
+        if: inputs.merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE: ${{ inputs.source-branch }}
+          TITLE: ${{ steps.meta.outputs.title }} (#${{ steps.open.outputs.number }})
+          BODY: ${{ steps.meta.outputs.body }}
+        run: |
+          gh pr merge --squash --subject "$TITLE" --body "$BODY" "$SOURCE" \
+            || { sleep 5; gh pr merge --squash --subject "$TITLE" --body "$BODY" "$SOURCE"; }

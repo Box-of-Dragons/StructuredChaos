@@ -117,6 +117,7 @@ flowchart TD
 - `scripts/family-release.mjs` — canonical versioning engine. Reads git tags and the conventional commit log, finds the single highest pending bump, and writes a release plan (`.github/release-plan.json`) plus release notes (`.github/release-notes.md`). With `--ai-notes` it rewords titles/details via OpenAI/OpenRouter into a repo-root `release-notes.ai.json` cache (keyed by commit sha) — no per-repo script needed, and repos without an API key fall back to heuristic titles.
 - `.github/workflows/family-release.yml` — reusable workflow (`workflow_call`). Checks out the caller repo, sparse-checks out `family-release.mjs` from this repo, plans, syncs the release branch, creates the `vX.Y.Z` tag, creates the GitHub Release — then deploys via `family-deploy.yml` on success. All release policy lives here: bot guard, should-release gating, tag format, notes format, deploy ordering.
 - `.github/workflows/family-deploy.yml` — reusable SSH deploy (`workflow_call`). Runs `git fetch` + `git fetch --tags` + `git reset --hard` on the VPS, then executes the repo's own `scripts/deploy.sh` if present. Normally invoked as the `deploy` job inside `family-release.yml`; can also be called standalone for deploy-only runs. Expects `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`, `PROD_PORT`, `PROD_PATH` secrets (prefer org-level so every repo inherits them).
+- `.github/workflows/family-pr.yml` — reusable PR opener (`workflow_call`). Opens or updates a `source-branch → base-branch` PR with a derived conventional title and the commit titles as the body; the `merge` input squash-merges in the same run with that title/body as the commit message. Callers are thin `workflow_dispatch`-only `pr.yml` files.
 
 ### Caller convention
 
@@ -155,6 +156,16 @@ Rules for callers:
 Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes`, `deploy` (all default `true`), `project-description`, `release-branch`, `prod-path`, `deploy-script`, `environment`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
 
 Job outputs available to follow-on jobs in the caller: `release_tag`, `should_release`, `display_version` — e.g. KnitStitch's `desktop-release` job builds the portable exe and attaches it to `release_tag`.
+
+### Pull requests into dev
+
+Feature branches land on `dev` via squash-merged PRs so `dev`'s log stays one conventional commit per unit of work. The manual **PR to dev** workflow (a thin caller of `family-pr.yml`) does the mechanics — no AI involved, everything is derived from the commit log:
+
+- **Title** — the commit subject itself when the branch is one commit ahead; otherwise the most significant conventional subject (`feat` > `fix` > first conventional; falls back to `chore: merge <branch> into dev`), flagged with `!` when any commit in the range is breaking.
+- **Body** — the bullet list of commit subjects, oldest first.
+- **`merge` input** — when ticked, the workflow squash-merges immediately via `gh pr merge --squash --subject --body`, so the landed commit is `<title> (#<pr>)` + commit titles — the `(#n)` suffix makes PR-sourced commits obvious in the log. Unticked, the PR waits for a manual squash merge in the UI — GitHub prefills the same shape.
+
+Caller shape is the same as `release.yml`: `workflow_dispatch` with `branch`/`merge` inputs, `permissions: contents: write, pull-requests: write`, `secrets: inherit`, pinned `@master`.
 
 ### Changing release behavior
 
