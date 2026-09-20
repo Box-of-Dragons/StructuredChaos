@@ -40,7 +40,7 @@ on:
         description: Whether a release-worthy bump was found
         value: ${{ jobs.release.outputs.should_release }}
       display_version:
-        description: Full display version including revision, e.g. v1.4.0.2
+        description: Display version for sites to render, e.g. v1.4.0
         value: ${{ jobs.release.outputs.display_version }}
 
 permissions:

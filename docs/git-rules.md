@@ -80,6 +80,8 @@ BREAKING CHANGE: v1 endpoints are no longer available.
 
 Releases are **always manual** — never cut automatically on push. To release a project, run its **Release** workflow: GitHub → Actions → Release → Run workflow (or `gh workflow run release.yml`).
 
+The Release workflow is also **the only deploy path**: it versions, tags, releases, and deploys in one run. Pushes never deploy — the GitHub→VPS webhooks were removed. (Exception: QR has no VPS repo checkout and still deploys by manual `scp`.)
+
 ### How a release flows
 
 ```mermaid
@@ -95,7 +97,7 @@ flowchart TD
     H --> J["Create tag + GitHub Release<br>with generated notes"]
     I --> J
     J --> K["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe, dev→master sync)"]
-    K --> L["Deploy — webhook, or family-deploy → scripts/deploy.sh"]
+    K --> L["Deploy job — family-deploy:<br>git reset + scripts/deploy.sh on the VPS"]
     L --> M["Site renders version via<br>its own build-info generator"]
 ```
 
@@ -103,7 +105,7 @@ flowchart TD
 
 - `scripts/family-release.mjs` — canonical versioning engine. Reads git tags and the conventional commit log, finds the single highest pending bump, and writes a release plan (`.github/release-plan.json`) plus release notes (`.github/release-notes.md`). Optionally consumes a repo-root `release-notes.ai.json` for AI-reworded entry titles/details.
 - `.github/workflows/family-release.yml` — reusable workflow (`workflow_call`). Checks out the caller repo, sparse-checks out `family-release.mjs` from this repo, plans, creates the `vX.Y.Z` tag, and creates the GitHub Release. All release policy lives here: bot guard, should-release gating, tag format, notes format.
-- `.github/workflows/family-deploy.yml` — reusable SSH deploy (`workflow_call`). Runs `git fetch` + `git reset --hard` on the VPS, then executes the repo's own `scripts/deploy.sh` if present. Expects `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`, `PROD_PORT`, `PROD_PATH` secrets (prefer org-level so every repo inherits them).
+- `.github/workflows/family-deploy.yml` — reusable SSH deploy (`workflow_call`). Runs `git fetch` + `git fetch --tags` + `git reset --hard` on the VPS, then executes the repo's own `scripts/deploy.sh` if present. Invoked as a `deploy` job inside each caller's `release.yml` (or standalone for deploy-only runs). Expects `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`, `PROD_PORT`, `PROD_PATH` secrets (prefer org-level so every repo inherits them).
 
 ### Caller convention
 
@@ -119,7 +121,17 @@ jobs:
   release:
     uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-release.yml@master
     secrets: inherit
+
+  deploy:
+    needs: release
+    if: always() && !failure() && !cancelled()
+    uses: Box-of-Dragons/StructuredChaos/.github/workflows/family-deploy.yml@master
+    with:
+      branch: master   # main for JSketcher
+    secrets: inherit
 ```
+
+The `deploy` job runs on every manual run — even when no release was cut (e.g. docs-only changes still ship). Repos whose VPS path needs post-reset build steps keep them in `scripts/deploy.sh` at the repo root.
 
 Rules for callers:
 
@@ -140,12 +152,12 @@ Edit `family-release.mjs` (versioning logic, notes format) or `family-release.ym
 
 | Repo | Release branch | Version display | Deploy | Notes |
 |---|---|---|---|---|
-| StructuredChaos | `master` | none (static site) | webhook | Hosts the shared engine + reusable workflows |
-| BoxOfDragons | `master` | `scripts/GenerateBuildInfo.php` → `web/js/buildInfo.js` + `web/changelog.html` | `family-deploy` → `scripts/deploy.sh` (webhook also configured) | Changelog entries labelled with the release segment they landed in |
-| KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | webhook | AI release notes via `prepare-command`; `desktop-release` job attaches the portable exe; `sync-master` fast-forwards `master` |
-| JSketcher | `main` | `scripts/generate-changelog.mjs` → `docs/changelog.md` + `web/changelog-fragment.html` | webhook | Fork commits only — upstream (xibyte) history excluded via `git cherry` |
-| QR | `master` | none | manual `scp` | Novelty pages, no site index |
-| BetterAuth | `master` | none | webhook (`npm ci`, `auth migrate`, `npm run build`, `pm2 reload`) | |
+| StructuredChaos | `master` | none (static site) | Release → deploy job (git reset only) | Hosts the shared engine + reusable workflows |
+| BoxOfDragons | `master` | `scripts/GenerateBuildInfo.php` → `web/js/buildInfo.js` + `web/changelog.html` | Release → deploy job → `scripts/deploy.sh` | Changelog entries labelled with the release segment they landed in; `deploy.yml` remains as a manual deploy-only fallback |
+| KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | Release → deploy job → `scripts/deploy.sh` | AI release notes via `prepare-command`; `desktop-release` job attaches the portable exe; `sync-master` fast-forwards `master` before deploy |
+| JSketcher | `main` | `scripts/generate-changelog.mjs` → `docs/changelog.md` + `web/changelog-fragment.html` | Release → deploy job → `scripts/deploy.sh` | Fork commits only — upstream (xibyte) history excluded via `git cherry` |
+| QR | `master` | none | manual `scp` (VPS docroot is not a git repo) | Release workflow creates tag + GitHub Release only |
+| BetterAuth | `master` | none | Release → deploy job → `scripts/deploy.sh` (`npm ci`, `auth migrate`, `npm run build`, `pm2 reload`) | deploy.sh sources `.env` for `DATABASE_URL` |
 | SolverWasm | `master` | — | — | Not wired: legacy tags aren't `vX.Y.Z`; seed a baseline tag (e.g. `v3.2.0`) before adding a release caller |
 
 All version display generators (whatever the stack) follow the same algorithm:

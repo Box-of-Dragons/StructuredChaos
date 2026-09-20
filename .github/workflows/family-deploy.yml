@@ -59,6 +59,7 @@ jobs:
 
             echo "Fetching latest code on ${{ inputs.branch }}..."
             git fetch origin ${{ inputs.branch }}
+            git fetch origin --tags --force
             git reset --hard origin/${{ inputs.branch }}
 
             if [ -f "${{ inputs.deploy-script }}" ]; then

@@ -78,17 +78,11 @@ When changing a token or component in `css/shared.css`, every site picks it up o
 - `.env.example` — template for `.env` (contains `GITHUB_WEBHOOK_SECRET`)
 - `README.md` — project bootstrap notes
 
-## VPS Deploy via GitHub Webhook
+## Deploy
 
-The VPS auto-deploys when GitHub receives a push to `master`.
+Deploys run as part of the manual **Release** workflow (Actions → Release → Run workflow): it tags the release, creates the GitHub Release, then SSHes to the VPS and runs `git fetch` + `git reset --hard`. No build step — nginx serves the working tree.
 
-`scripts/webhook-server.mjs` is a small Node.js HTTP server (no external dependencies) that:
-
-1. Verifies the GitHub HMAC-SHA256 signature using `GITHUB_WEBHOOK_SECRET` from `.env`
-2. Checks that the push is to `refs/heads/master`
-3. Runs `git fetch origin master` + `git reset --hard origin/master`
-
-nginx serves the working tree directly as static files. No build step, no app process to reload.
+Pushes no longer deploy — the GitHub webhook was removed. `scripts/webhook-server.mjs`, `ecosystem.config.cjs`, and the PM2 process on the VPS are legacy and can be decommissioned.
 
 ### Manual deploy (fallback)
 
