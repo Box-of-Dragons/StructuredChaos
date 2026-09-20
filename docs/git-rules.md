@@ -95,7 +95,7 @@ flowchart TD
     E -- "yes" --> G{"Latest vX.Y.Z tag exists?"}
     G -- "yes" --> H["Next version = tag<br>+ single highest bump"]
     G -- "no" --> I["Next version = v0.1.0<br>(first release)"]
-    H --> J["Create tag + GitHub Release<br>with generated notes"]
+    H --> J["Create tag + GitHub Release<br>(notes AI-reworded if an<br>API key is set)"]
     I --> J
     J --> K["Caller follow-on jobs<br>(e.g. KnitStitch desktop exe, dev→master sync)"]
     K --> L["Deploy job — family-deploy:<br>git reset + scripts/deploy.sh on the VPS"]
@@ -104,7 +104,7 @@ flowchart TD
 
 ### Shared machinery (this repo)
 
-- `scripts/family-release.mjs` — canonical versioning engine. Reads git tags and the conventional commit log, finds the single highest pending bump, and writes a release plan (`.github/release-plan.json`) plus release notes (`.github/release-notes.md`). Optionally consumes a repo-root `release-notes.ai.json` for AI-reworded entry titles/details.
+- `scripts/family-release.mjs` — canonical versioning engine. Reads git tags and the conventional commit log, finds the single highest pending bump, and writes a release plan (`.github/release-plan.json`) plus release notes (`.github/release-notes.md`). With `--ai-notes` it rewords titles/details via OpenAI/OpenRouter into a repo-root `release-notes.ai.json` cache (keyed by commit sha) — no per-repo script needed, and repos without an API key fall back to heuristic titles.
 - `.github/workflows/family-release.yml` — reusable workflow (`workflow_call`). Checks out the caller repo, sparse-checks out `family-release.mjs` from this repo, plans, creates the `vX.Y.Z` tag, and creates the GitHub Release. All release policy lives here: bot guard, should-release gating, tag format, notes format.
 - `.github/workflows/family-deploy.yml` — reusable SSH deploy (`workflow_call`). Runs `git fetch` + `git fetch --tags` + `git reset --hard` on the VPS, then executes the repo's own `scripts/deploy.sh` if present. Invoked as a `deploy` job inside each caller's `release.yml` (or standalone for deploy-only runs). Expects `PROD_HOST`, `PROD_USER`, `PROD_SSH_KEY`, `PROD_PORT`, `PROD_PATH` secrets (prefer org-level so every repo inherits them).
 
@@ -139,9 +139,10 @@ Rules for callers:
 - Trigger is **`workflow_dispatch` only** — do not add `push` triggers to release workflows. Push-triggered automation (lint, test, deploy) belongs in other workflow files.
 - Keep `secrets: inherit` so org secrets flow through.
 - Pin `@master` so shared changes propagate immediately; pin a tag (e.g. `@v1`) only if controlled rollout of pipeline changes is ever needed.
-- Repos that need a prepare step (dependency install, AI release notes) pass `node-version` and `prepare-command` inputs; the shared workflow exposes `OPENAI_API_KEY`, `OPENAI_RELEASE_NOTES_MODEL`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` to that step.
+- AI release notes are on by default (`ai-notes`). When `OPENAI_API_KEY` or `OPENROUTER_API_KEY` is set on the repo (org secrets work too), titles/details are reworded into user-facing language and the `release-notes.ai.json` cache is committed back before tagging — so site changelogs that read it stay in sync. Repos without a key silently keep heuristic titles. `project-description` tunes the prompt.
+- Repos that need a prepare step (e.g. dependency install) pass `node-version` and `prepare-command` inputs.
 
-Available `workflow_call` inputs: `create-tag`, `create-release` (both default `true`), `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
+Available `workflow_call` inputs: `create-tag`, `create-release`, `ai-notes` (all default `true`), `project-description`, `node-version`, `prepare-command`, `family-ref` (which ref of this repo to pull the engine from).
 
 Job outputs available to follow-on jobs in the caller: `release_tag`, `should_release`, `display_version` — e.g. KnitStitch's `desktop-release` job builds the portable exe and attaches it to `release_tag`.
 
@@ -155,7 +156,7 @@ Edit `family-release.mjs` (versioning logic, notes format) or `family-release.ym
 |---|---|---|---|---|
 | StructuredChaos | `master` | none (static site) | Release → deploy job (git reset only) | Hosts the shared engine + reusable workflows |
 | BoxOfDragons | `master` | `scripts/GenerateBuildInfo.php` → `web/js/buildInfo.js` + `web/changelog.html` | Release → deploy job → `scripts/deploy.sh` | Changelog entries labelled with the release segment they landed in; `deploy.yml` remains as a manual deploy-only fallback |
-| KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | Release → deploy job → `scripts/deploy.sh` | AI release notes via `prepare-command`; `desktop-release` job attaches the portable exe; `sync-master` fast-forwards `master` before deploy |
+| KnitStitch | `dev` → `master` | `scripts/generate-build-info.mjs` (reads GitHub Releases) → `public/js/buildInfo.js` + `CHANGELOG.md` | Release → deploy job → `scripts/deploy.sh` | `desktop-release` job attaches the portable exe; `sync-master` fast-forwards `master` before deploy |
 | JSketcher | `main` | `scripts/generate-changelog.mjs` → `docs/changelog.md` + `web/changelog-fragment.html` | Release → deploy job → `scripts/deploy.sh` | Fork commits only — upstream (xibyte) history excluded via `git cherry` |
 | QR | `master` | none | manual `scp` (VPS docroot is not a git repo) | Release workflow creates tag + GitHub Release only |
 | BetterAuth | `master` | none | Release → deploy job → `scripts/deploy.sh` (`npm ci`, `auth migrate`, `npm run build`, `pm2 reload`) | deploy.sh sources `.env` for `DATABASE_URL` |

@@ -25,7 +25,15 @@ on:
         type: string
         default: ''
       prepare-command:
-        description: Shell command run after checkout, before planning (e.g. AI notes generation)
+        description: Shell command run after checkout, before planning (e.g. dependency install)
+        type: string
+        default: ''
+      ai-notes:
+        description: Reword release notes with AI (uses OPENAI_API_KEY or OPENROUTER_API_KEY when set; falls back to heuristic titles otherwise)
+        type: boolean
+        default: true
+      project-description:
+        description: Short description used in the AI prompt, e.g. "a knitting pattern design web app" (defaults to the repo name)
         type: string
         default: ''
       family-ref:
@@ -82,20 +90,42 @@ jobs:
           node-version: ${{ inputs.node-version }}
           cache: npm
 
-      # Optional AI-notes env — only populated for repos that generate
-      # release-notes.ai.json in prepare-command (e.g. KnitStitch).
       - name: Run prepare command
         if: inputs.prepare-command != ''
+        run: ${{ inputs.prepare-command }}
+
+      - name: Plan release
+        id: plan
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_RELEASE_NOTES_MODEL: ${{ vars.OPENAI_RELEASE_NOTES_MODEL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
-        run: ${{ inputs.prepare-command }}
+        run: >-
+          node .family/scripts/family-release.mjs plan --root=. --github-output
+          --ai-notes=${{ inputs.ai-notes }}
+          --project-description="${{ inputs.project-description }}"
 
-      - name: Plan release
-        id: plan
-        run: node .family/scripts/family-release.mjs plan --root=. --github-output
+      # Commit the AI note cache before tagging so the tag (and any deployed
+      # site changelog that reads it) includes the fresh reworded notes.
+      # chore(release-notes) commits are skipped by the planner, so this never
+      # counts toward a bump.
+      - name: Commit AI release-note cache
+        if: inputs.ai-notes && steps.plan.outputs.should_release == 'true'
+        run: |
+          if [ ! -f release-notes.ai.json ]; then
+            echo "No AI note cache produced."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release-notes.ai.json
+          if git diff --cached --quiet; then
+            echo "AI note cache unchanged."
+            exit 0
+          fi
+          git commit -m "chore(release-notes): update AI release notes"
+          git push
 
       - name: Create tag
         if: inputs.create-tag && steps.plan.outputs.should_release == 'true'
