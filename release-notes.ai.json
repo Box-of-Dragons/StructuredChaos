@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "notes": {
+    "5d082574ccd2eb2f8b33869d3020ab68144be564": {
+      "title": "Pull request guidance now uses the dispatch reference",
+      "details": [
+        "Clarified where pull request callers should source their changes."
+      ]
+    },
+    "b46154b3dba0c392a73d4ef04605fb00af69a722": {
+      "title": "Release note updates stay out of main branch history",
+      "details": [
+        "The release note cache is stored separately while reworded titles remain stable across runs."
+      ]
+    }
+  },
+  "updatedAt": "2026-09-20T21:27:45.468Z"
+}
