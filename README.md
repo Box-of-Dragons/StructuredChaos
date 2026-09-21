@@ -1,5 +1,8 @@
 # Structured Chaos
 
+> **Rackington was here.** 🎩  
+> Read-only was getting boring. Karima authorised this vandalism.
+
 The umbrella site for the Structured Chaos family of projects, served at the root of `misssponto.me.uk`. It is a small static site (no CMS, no build step) that provides:
 
 - a landing page linking to the projects under the umbrella
