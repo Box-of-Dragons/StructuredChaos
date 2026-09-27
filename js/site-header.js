@@ -6,7 +6,7 @@
  *
  *   <script>window.SITE_HEADER = { brand: '...', nav: [...], github: '...', gitlab: '...' };</script>
  *   <div id="site-header"></div>
- *   <script src="https://misssponto.me.uk/js/site-header.js" defer></script>
+ *   <script src="https://structuredchaos.dev/js/site-header.js" defer></script>
  *
  * The active nav item is detected by matching the current path. CraftCms
  * does NOT use this script — its nav is database-driven via Craft globals,
@@ -18,7 +18,7 @@
  *     nav:    [                                    // optional — nav items
  *       { label: 'Home', href: '/' },
  *       { label: 'ReadMe', href: '/readme.html' },
- *       { label: 'CAD', localHref: 'http://localhost:3000/', liveHref: 'https://jsketcher.misssponto.me.uk/' }
+ *       { label: 'CAD', localHref: 'http://localhost:3000/', liveHref: 'https://jsketcher.structuredchaos.dev/' }
  *     ],
  *     github: 'https://github.com/Box-of-Dragons/KnitStitch',  // optional
  *     gitlab: 'https://gitlab.com/structured-chaos/KnitStitch'  // optional

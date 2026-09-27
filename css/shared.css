@@ -6,7 +6,7 @@
  * lists, gallery, footer, responsive breakpoints).
  *
  * Every family site loads it from the root Structured Chaos site
- * (misssponto.me.uk in production, localhost:4000 in local dev) BEFORE
+ * (structuredchaos.dev in production, localhost:4000 in local dev) BEFORE
  * its own site-specific stylesheet. Site-specific sheets only contain
  * overrides for layout values (e.g. .shell max-width) and components
  * unique to that site (e.g. KnitStitch's sketch canvas, StructuredChaos's

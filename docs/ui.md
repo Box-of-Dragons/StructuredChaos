@@ -31,7 +31,7 @@ Renders the site switcher links into a placeholder element. Detects local dev an
     var host = location.hostname;
     var isLocal = host === 'localhost' || host === '127.0.0.1' || host.indexOf('.ddev.site') !== -1;
     var s = document.createElement('script');
-    s.src = (isLocal ? 'http://localhost:4000' : 'https://misssponto.me.uk') + '/js/global-bar.js';
+    s.src = (isLocal ? 'http://localhost:4000' : 'https://structuredchaos.dev') + '/js/global-bar.js';
     s.defer = true;
     document.head.appendChild(s);
   })();
@@ -53,11 +53,11 @@ Renders the site switcher links into a placeholder element. Detects local dev an
 
 | Site id | Local URL | Production URL |
 | --- | --- | --- |
-| `structured-chaos` | `http://localhost:4000` | `https://misssponto.me.uk/` |
-| `box-of-dragons` | `http://boxofdragons.ddev.site` | `https://boxofdragons.misssponto.me.uk/` |
-| `knitstitch` | `http://localhost:5173` | `https://knitstitch.misssponto.me.uk/` |
-| `jsketcher` | `http://localhost:3001` | `https://jsketcher.misssponto.me.uk/` |
-| `account` / `Login` | `http://localhost:3000` | `https://auth.misssponto.me.uk/` |
+| `structured-chaos` | `http://localhost:4000` | `https://structuredchaos.dev/` |
+| `box-of-dragons` | `http://boxofdragons.ddev.site` | `https://boxofdragons.structuredchaos.dev/` |
+| `knitstitch` | `http://localhost:5173` | `https://knitstitch.structuredchaos.dev/` |
+| `jsketcher` | `http://localhost:3001` | `https://jsketcher.structuredchaos.dev/` |
+| `account` / `Login` | `http://localhost:3000` | `https://auth.structuredchaos.dev/` |
 
 **Adding a new site to the bar:** edit the `SITES` array at the top of `js/global-bar.js`. Add the local dev URL to `LOCAL_HREFS` if the site has a local dev server. Every subdomain picks up the change on next load — no per-site edits needed.
 
@@ -83,7 +83,7 @@ The title area is collapsible. `site-header.js` renders a centered pull-tab on t
 <script src="/js/site-header.js" defer></script>
 ```
 
-Subdomain sites load it from the same origin as `global-bar.js` (localhost:4000 in dev, misssponto.me.uk in production) — see the inline loader script above.
+Subdomain sites load it from the same origin as `global-bar.js` (localhost:4000 in dev, structuredchaos.dev in production) — see the inline loader script above.
 
 **Config shape:**
 
