@@ -1,6 +1,6 @@
 # Structured Chaos Agent Notes
 
-This repository is the umbrella site for the Structured Chaos family of projects. It is a small static site (no CMS, no build step) served from the root of `misssponto.me.uk`.
+This repository is the umbrella site for the Structured Chaos family of projects. It is a small static site (no CMS, no build step) served from the root of `structuredchaos.dev`.
 
 ## Scope
 
@@ -54,8 +54,8 @@ Every family site loads it before its own site-specific CSS:
 
 - **StructuredChaos**: `<link rel="stylesheet" href="/css/shared.css">` then `<link rel="stylesheet" href="/css/site.css">`
 - **Box of Dragons**: loaded from the root site via PHP (`shared_assets_base() . '/css/shared.css'`) then `/css/site.css`
-- **KnitStitch**: loaded from the root site (local: `localhost:4000`, prod: `misssponto.me.uk`) then its own `app.css`
-- **JSketcher**: loaded from the root site (local: `localhost:4000`, prod: `misssponto.me.uk`) then `web/css/site-shell.css` or `dist/css/site-shell.css`
+- **KnitStitch**: loaded from the root site (local: `localhost:4000`, prod: `structuredchaos.dev`) then its own `app.css`
+- **JSketcher**: loaded from the root site (local: `localhost:4000`, prod: `structuredchaos.dev`) then `web/css/site-shell.css` or `dist/css/site-shell.css`
 
 When changing a token or component in `css/shared.css`, every site picks it up on next load — no per-repo edits needed. Site-specific CSS files only contain layout overrides (e.g. `.shell` max-width) and components unique to that site.
 

@@ -17,7 +17,7 @@
  *        pm2 start ecosystem.config.cjs
  *        pm2 save
  *        pm2 startup
- *   3. Configure nginx to serve the repo root for misssponto.me.uk and
+ *   3. Configure nginx to serve the repo root for structuredchaos.dev and
  *      proxy /webhook to this server:
  *        location /webhook {
  *          proxy_pass http://127.0.0.1:3003;
@@ -29,7 +29,7 @@
  *          try_files $uri $uri/ =404;
  *        }
  *   4. In GitHub repo settings → Webhooks → Add webhook:
- *        - Payload URL: https://misssponto.me.uk/webhook
+ *        - Payload URL: https://structuredchaos.dev/webhook
  *        - Content type: application/json
  *        - Secret: same value as GITHUB_WEBHOOK_SECRET
  *        - Events: Just the push event

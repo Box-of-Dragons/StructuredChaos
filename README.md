@@ -1,6 +1,9 @@
 # Structured Chaos
 
-The umbrella site for the Structured Chaos family of projects, served at the root of `misssponto.me.uk`. It is a small static site (no CMS, no build step) that provides:
+> **Rackington was here.** 🎩  
+> Read-only was getting boring. Karima authorised this vandalism.
+
+The umbrella site for the Structured Chaos family of projects, served at the root of `structuredchaos.dev`. It is a small static site (no CMS, no build step) that provides:
 
 - a landing page linking to the projects under the umbrella
 - the canonical [credits.md](./credits.md) — the single source of truth for open source software, libraries, fonts, and tools used across all Structured Chaos projects
@@ -53,7 +56,7 @@ Edit `credits.md` directly. The credits page fetches it at runtime and renders i
 
 ```html
 <div id="global-bar"></div>
-<script src="https://misssponto.me.uk/js/global-bar.js" defer></script>
+<script src="https://structuredchaos.dev/js/global-bar.js" defer></script>
 ```
 
 The script auto-detects the active site from `location.hostname`, or you can pin it with `data-active="knitstitch"` on the placeholder.
@@ -86,7 +89,7 @@ The site is served by nginx directly from the repo working tree — no build ste
    - `location /webhook { proxy_pass http://127.0.0.1:3003; }`
    - `location / { root /var/www/structured-chaos; index index.html; try_files $uri $uri/ =404; }`
 4. In GitHub repo settings → Webhooks → Add webhook:
-   - Payload URL: `https://misssponto.me.uk/webhook`
+   - Payload URL: `https://structuredchaos.dev/webhook`
    - Content type: `application/json`
    - Secret: same value as `GITHUB_WEBHOOK_SECRET`
    - Events: Just the push event

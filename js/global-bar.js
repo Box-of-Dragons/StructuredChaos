@@ -2,7 +2,7 @@
  *
  * Each site includes this script and a placeholder element:
  *   <div id="global-bar" data-active="structured-chaos"></div>
- *   <script src="https://misssponto.me.uk/js/global-bar.js" defer></script>
+ *   <script src="https://structuredchaos.dev/js/global-bar.js" defer></script>
  *
  * The script injects the bar HTML into the placeholder and marks the link
  * matching data-active (or the current hostname, if data-active is omitted)
@@ -18,11 +18,11 @@
     'use strict';
 
     var SITES = [
-        { id: 'structured-chaos', label: 'Structured Chaos', href: 'https://misssponto.me.uk/' },
-        { id: 'box-of-dragons',   label: 'Box of Dragons',   href: 'https://boxofdragons.misssponto.me.uk/' },
-        { id: 'knitstitch',       label: 'KnitStitch',       href: 'https://knitstitch.misssponto.me.uk/' },
-        { id: 'jsketcher',        label: 'JSketcher',        href: 'https://jsketcher.misssponto.me.uk/' },
-        { id: 'account',          label: 'Login',            href: 'https://auth.misssponto.me.uk/', align: 'right' }
+        { id: 'structured-chaos', label: 'Structured Chaos', href: 'https://structuredchaos.dev/' },
+        { id: 'box-of-dragons',   label: 'Box of Dragons',   href: 'https://boxofdragons.structuredchaos.dev/' },
+        { id: 'knitstitch',       label: 'KnitStitch',       href: 'https://knitstitch.structuredchaos.dev/' },
+        { id: 'jsketcher',        label: 'JSketcher',        href: 'https://jsketcher.structuredchaos.dev/' },
+        { id: 'account',          label: 'Login',            href: 'https://auth.structuredchaos.dev/', align: 'right' }
     ];
 
     // Local dev URL overrides — used when isLocal() returns true.
@@ -37,7 +37,7 @@
     };
 
     function accountBase(local) {
-        return local ? LOCAL_HREFS.account : 'https://auth.misssponto.me.uk';
+        return local ? LOCAL_HREFS.account : 'https://auth.structuredchaos.dev';
     }
 
     function isLocal() {
@@ -52,7 +52,7 @@
         if (explicit) return explicit;
 
         var host = (location.hostname || '').toLowerCase();
-        if (host === 'misssponto.me.uk' || host === 'www.misssponto.me.uk') return 'structured-chaos';
+        if (host === 'structuredchaos.dev' || host === 'www.structuredchaos.dev') return 'structured-chaos';
         if (host.indexOf('boxofdragons') === 0) return 'box-of-dragons';
         if (host.indexOf('knitstitch') === 0) return 'knitstitch';
         if (host.indexOf('jsketcher') === 0) return 'jsketcher';
