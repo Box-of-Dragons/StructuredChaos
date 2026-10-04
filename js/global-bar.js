@@ -2,7 +2,7 @@
  *
  * Each site includes this script and a placeholder element:
  *   <div id="global-bar" data-active="structured-chaos"></div>
- *   <script src="https://misssponto.me.uk/js/global-bar.js" defer></script>
+ *   <script src="https://structuredchaos.dev/js/global-bar.js" defer></script>
  *
  * The script injects the bar HTML into the placeholder and marks the link
  * matching data-active (or the current hostname, if data-active is omitted)
@@ -18,11 +18,11 @@
     'use strict';
 
     var SITES = [
-        { id: 'structured-chaos', label: 'Structured Chaos', href: 'https://misssponto.me.uk/' },
-        { id: 'box-of-dragons',   label: 'Box of Dragons',   href: 'https://boxofdragons.misssponto.me.uk/' },
-        { id: 'knitstitch',       label: 'KnitStitch',       href: 'https://knitstitch.misssponto.me.uk/' },
-        { id: 'jsketcher',        label: 'JSketcher',        href: 'https://jsketcher.misssponto.me.uk/' },
-        { id: 'account',          label: 'Login',            href: 'https://auth.misssponto.me.uk/', align: 'right' }
+        { id: 'structured-chaos', label: 'Structured Chaos', href: 'https://structuredchaos.dev/' },
+        { id: 'box-of-dragons',   label: 'Box of Dragons',   href: 'https://boxofdragons.structuredchaos.dev/' },
+        { id: 'knitstitch',       label: 'KnitStitch',       href: 'https://knitstitch.structuredchaos.dev/' },
+        { id: 'jsketcher',        label: 'JSketcher',        href: 'https://jsketcher.structuredchaos.dev/' },
+        { id: 'account',          label: 'Login',            href: 'https://auth.structuredchaos.dev/', align: 'right' }
     ];
 
     // Local dev URL overrides — used when isLocal() returns true.
@@ -37,7 +37,7 @@
     };
 
     function accountBase(local) {
-        return local ? LOCAL_HREFS.account : 'https://auth.misssponto.me.uk';
+        return local ? LOCAL_HREFS.account : 'https://auth.structuredchaos.dev';
     }
 
     function isLocal() {
@@ -52,13 +52,16 @@
         if (explicit) return explicit;
 
         var host = (location.hostname || '').toLowerCase();
-        if (host === 'misssponto.me.uk' || host === 'www.misssponto.me.uk') return 'structured-chaos';
+        if (host === 'structuredchaos.dev' || host === 'www.structuredchaos.dev') return 'structured-chaos';
         if (host.indexOf('boxofdragons') === 0) return 'box-of-dragons';
         if (host.indexOf('knitstitch') === 0) return 'knitstitch';
         if (host.indexOf('jsketcher') === 0) return 'jsketcher';
         if (host.indexOf('auth') === 0 || host.indexOf('www.auth') === 0) return 'account';
         return '';
     }
+
+    var MENU_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 
     function resolveHref(site, activeId, local) {
         // Active site: always link to the current origin root.
@@ -74,20 +77,61 @@
     function render(placeholder) {
         var activeId = resolveActiveId(placeholder);
         var local = isLocal();
+        var activeLabel = 'Sites';
 
-        var links = SITES.map(function (site) {
+        var siteLinks = [];
+        var rightLinks = [];
+        SITES.forEach(function (site) {
             var cls = 'global-bar-link'
                 + (site.id === activeId ? ' active' : '')
                 + (site.align === 'right' ? ' global-bar-link--right' : '');
             var href = resolveHref(site, activeId, local);
-            return '<a class="' + cls + '" href="' + href + '">' + site.label + '</a>';
-        }).join('');
+            var html = '<a class="' + cls + '" href="' + href + '">' + site.label + '</a>';
+            if (site.align === 'right') {
+                rightLinks.push(html);
+            } else {
+                siteLinks.push(html);
+                if (site.id === activeId) activeLabel = site.label;
+            }
+        });
 
         placeholder.setAttribute('role', 'navigation');
         placeholder.setAttribute('aria-label', 'Site switcher');
         placeholder.className = 'global-bar';
-        placeholder.innerHTML = '<div class="shell global-bar-row">' + links + '</div>';
+        placeholder.innerHTML = '<div class="shell global-bar-row">'
+            + '<button class="global-bar-toggle" type="button" aria-label="Open site menu" aria-expanded="false" aria-controls="global-bar-menu">'
+            + MENU_ICON + '</button>'
+            + '<span class="global-bar-current">' + activeLabel + '</span>'
+            + '<nav class="global-bar-menu" id="global-bar-menu" aria-label="Family sites">' + siteLinks.join('') + '</nav>'
+            + rightLinks.join('')
+            + '</div>';
+
+        wireToggle(placeholder);
         hydrateAccountLink(placeholder, local);
+    }
+
+    // Hamburger toggle — only visible on small screens (CSS hides it on
+    // desktop, where the links are always shown in a row).
+    function wireToggle(placeholder) {
+        var button = placeholder.querySelector('.global-bar-toggle');
+        if (!button) return;
+
+        function setOpen(open) {
+            placeholder.classList.toggle('global-bar--open', open);
+            button.setAttribute('aria-expanded', String(open));
+            button.setAttribute('aria-label', open ? 'Close site menu' : 'Open site menu');
+        }
+
+        button.addEventListener('click', function (e) {
+            e.stopPropagation();
+            setOpen(!placeholder.classList.contains('global-bar--open'));
+        });
+        document.addEventListener('click', function (e) {
+            if (!placeholder.contains(e.target)) setOpen(false);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') setOpen(false);
+        });
     }
 
     function hydrateAccountLink(placeholder, local) {

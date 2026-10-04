@@ -6,7 +6,7 @@
  * lists, gallery, footer, responsive breakpoints).
  *
  * Every family site loads it from the root Structured Chaos site
- * (misssponto.me.uk in production, localhost:4000 in local dev) BEFORE
+ * (structuredchaos.dev in production, localhost:4000 in local dev) BEFORE
  * its own site-specific stylesheet. Site-specific sheets only contain
  * overrides for layout values (e.g. .shell max-width) and components
  * unique to that site (e.g. KnitStitch's sketch canvas, StructuredChaos's
@@ -323,7 +323,38 @@ td {
     min-height: 36px;
 }
 
+/* The site links live inside this nav. On narrow desktop windows it
+   scrolls sideways so the Login link on the right stays put; on small
+   screens it becomes the hamburger dropdown. */
+.global-bar-menu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.global-bar-menu::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hamburger toggle and current-site label — small screens only. */
+.global-bar-toggle,
+.global-bar-current {
+    display: none;
+}
+
+/* Raise the bar above the sticky site header while its dropdown is open. */
+.global-bar--open {
+    z-index: 140;
+}
+
 .global-bar-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
     color: var(--secondary);
     font-size: 12px;
     font-weight: 600;
@@ -489,6 +520,11 @@ td {
     gap: 8px;
     flex-wrap: wrap;
     justify-self: end;
+}
+
+/* Hamburger nav toggle — small screens only. */
+.main-nav-toggle {
+    display: none;
 }
 
 .site-header__handle {
@@ -1375,6 +1411,10 @@ select:focus {
     gap: 14px;
 }
 
+.footer-sep {
+    color: var(--body-light);
+}
+
 .footer-socials {
     display: flex;
     gap: 14px;
@@ -1444,35 +1484,164 @@ select:focus {
         padding: 18px 20px;
     }
 
+    /* Global bar: hamburger on the left, current-site label, Login on
+       the right. The site links move into a dropdown under the bar. */
+    .global-bar-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 36px;
+        margin-left: -8px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--secondary);
+        cursor: pointer;
+        opacity: 0.75;
+    }
+
+    .global-bar-toggle:hover {
+        opacity: 1;
+    }
+
+    .global-bar-toggle svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.4;
+        stroke-linecap: round;
+    }
+
+    .global-bar-current {
+        display: block;
+        min-width: 0;
+        color: var(--secondary);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.9;
+    }
+
+    .global-bar-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        padding: 2px 14px 10px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        background: var(--body-dark);
+        border-top: 1px solid rgba(244, 246, 240, 0.12);
+        box-shadow: 0 14px 24px rgba(0, 0, 0, 0.28);
+        overflow: visible;
+    }
+
+    .global-bar--open .global-bar-menu {
+        display: flex;
+    }
+
+    .global-bar-menu .global-bar-link {
+        min-height: 44px;
+        border-bottom: 1px solid rgba(244, 246, 240, 0.08);
+    }
+
+    .global-bar-menu .global-bar-link:last-child {
+        border-bottom: 0;
+    }
+
     .header-row {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 16px;
+        min-height: 56px;
+        padding: 8px 0;
     }
 
     .site-header__content {
-        max-height: 220px;
+        max-height: 480px;
     }
 
     .site-header--collapsed .site-header__content {
         max-height: 0;
     }
 
-    .main-nav {
-        width: 100%;
-        order: 2;
-        justify-content: flex-start;
+    /* Project links and the nav hamburger sit on the brand row (right
+       side); the nav stays hidden until the toggle is tapped. The
+       GitHub/GitLab links shrink to icon-only so the row fits. */
+    .header-project-links {
+        order: 1;
+        width: auto;
+        margin-left: auto;
         justify-self: auto;
-        flex-wrap: wrap;
-        gap: 0 18px;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+
+    .project-link {
+        padding: 7px 8px;
+    }
+
+    .project-link span {
+        display: none;
+    }
+
+    .main-nav-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--tertiary);
+        color: var(--body-dark);
+        box-shadow: var(--shadow-sm);
+        cursor: pointer;
+    }
+
+    .main-nav-toggle:hover {
+        color: var(--primary);
+    }
+
+    .main-nav-toggle svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.6;
+        stroke-linecap: round;
+    }
+
+    .main-nav {
+        display: none;
+        order: 2;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+    }
+
+    .site-header--nav-open .main-nav {
+        display: flex;
     }
 
     .main-nav-link {
+        width: 100%;
         min-height: 44px;
     }
 
     .main-nav-item {
+        width: 100%;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
     .main-nav-submenu {
@@ -1498,15 +1667,24 @@ select:focus {
         padding: 6px 0;
     }
 
-    .header-project-links {
-        width: 100%;
-        order: 3;
-        justify-self: auto;
-        justify-content: flex-start;
-    }
-
     .page-layout {
         grid-template-columns: 1fr;
+    }
+
+    .sidebar--sticky,
+    .container--sticky {
+        position: static;
+    }
+
+    /* Fixed layout keeps table columns evenly sized on narrow screens
+       instead of compressing some columns to single letters. */
+    table {
+        table-layout: fixed;
+    }
+
+    th,
+    td {
+        overflow-wrap: break-word;
     }
 
     .gallery {
