@@ -42,6 +42,9 @@
     var CHEVRON_ICON = '<svg class="site-header-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
         '<path d="m16 14-4-4-4 4"/></svg>';
 
+    var MENU_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+        '<path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+
     function isLocal() {
         var host = (location.hostname || '').toLowerCase();
         return host === 'localhost'
@@ -86,7 +89,7 @@
                 escAttr(item.label) +
                 '</a></div>';
         }).join('');
-        return '<nav class="main-nav" aria-label="Main navigation">' + items + '</nav>';
+        return '<nav class="main-nav" id="main-nav" aria-label="Main navigation">' + items + '</nav>';
     }
 
     function renderProjectLinks(config) {
@@ -99,8 +102,13 @@
             links += '<a class="project-link project-link--gitlab" href="' + escAttr(config.gitlab) + '" target="_blank" rel="noopener noreferrer" aria-label="Open the project on GitLab">' +
                 GITLAB_ICON + '<span>GitLab</span></a>';
         }
-        if (!links) return '';
-        return '<div class="header-project-links" aria-label="Project links">' + links + '</div>';
+        var toggle = '';
+        if (config.nav && config.nav.length) {
+            toggle = '<button class="main-nav-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="main-nav">' +
+                MENU_ICON + '</button>';
+        }
+        if (!links && !toggle) return '';
+        return '<div class="header-project-links" aria-label="Project links">' + links + toggle + '</div>';
     }
 
     function render(placeholder, config) {
@@ -159,9 +167,40 @@
         applyCollapsedState(header, readCollapsedState());
 
         var button = header.querySelector('.site-header-toggle');
-        if (!button) return;
-        button.addEventListener('click', function () {
-            applyCollapsedState(header, !header.classList.contains('site-header--collapsed'));
+        if (button) {
+            button.addEventListener('click', function () {
+                applyCollapsedState(header, !header.classList.contains('site-header--collapsed'));
+            });
+        }
+
+        wireNavToggle(header);
+    }
+
+    // Hamburger nav toggle — only visible on small screens (CSS hides it on
+    // desktop, where the nav links are always shown in a row).
+    function wireNavToggle(header) {
+        var button = header.querySelector('.main-nav-toggle');
+        var nav = header.querySelector('.main-nav');
+        if (!button || !nav) return;
+
+        function setOpen(open) {
+            header.classList.toggle('site-header--nav-open', open);
+            button.setAttribute('aria-expanded', String(open));
+            button.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+        }
+
+        button.addEventListener('click', function (e) {
+            e.stopPropagation();
+            setOpen(!header.classList.contains('site-header--nav-open'));
+        });
+        nav.addEventListener('click', function (e) {
+            if (e.target.closest && e.target.closest('a')) setOpen(false);
+        });
+        document.addEventListener('click', function (e) {
+            if (!header.contains(e.target)) setOpen(false);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') setOpen(false);
         });
     }
 
