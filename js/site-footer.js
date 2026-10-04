@@ -7,7 +7,8 @@
  *   window.SITE_FOOTER = {
  *     label: 'KnitStitch',              // optional left-side text
  *     leftHtml: '<span>...</span>',      // optional trusted HTML before links
- *     links: [{ label: 'Credits', href: '/credits.html' }],
+ *     links: [{ label: 'Credits', href: '/credits.html' },
+ *             { separator: true }],      // renders a | divider
  *     buildInfoSrc: '/js/buildInfo.js'  // optional script exposing BUILD_INFO
  *   };
  */
@@ -32,6 +33,7 @@
     function renderLinks(links) {
         if (!links || !links.length) return '';
         return links.map(function (link) {
+            if (link.separator) return '<span class="footer-sep">|</span>';
             return '<a href="' + esc(link.href || '#') + '">' + esc(link.label || '') + '</a>';
         }).join('');
     }
