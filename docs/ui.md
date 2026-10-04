@@ -61,6 +61,8 @@ Renders the site switcher links into a placeholder element. Detects local dev an
 
 **Adding a new site to the bar:** edit the `SITES` array at the top of `js/global-bar.js`. Add the local dev URL to `LOCAL_HREFS` if the site has a local dev server. Every subdomain picks up the change on next load — no per-site edits needed.
 
+**Mobile (≤740px):** the site links collapse into a hamburger dropdown. The bar shows a toggle button on the left, the current site's label, and keeps the right-aligned link (Login) visible. The dropdown (`#global-bar-menu`) opens below the bar as a full-width dark panel — `global-bar--open` on `.global-bar` is the open state, wired by `global-bar.js` (toggles on tap, closes on outside click/Escape). On wider windows where the links overflow, the nav scrolls sideways inside `.global-bar-menu` so the right link stays put.
+
 ### `js/site-header.js` — site header (brand, nav, project links)
 
 Renders the site header from a per-page config object. The active nav item is detected automatically by matching `location.pathname`.
@@ -99,6 +101,8 @@ Subdomain sites load it from the same origin as `global-bar.js` (localhost:4000 
 **BoxOfDragons** loads `site-header.js` from the root site the same way as KnitStitch (inline loader script that picks local dev or production URL). The header config is set per-page via `window.SITE_HEADER`.
 
 **Adding a new page's nav:** just update the `window.SITE_HEADER` config on that page. The active state is automatic. No changes to `site-header.js` itself are needed.
+
+**Mobile (≤740px):** the header row wraps into a single line — brand on the left, project links plus a hamburger button (`.main-nav-toggle`, rendered inside `.header-project-links`) on the right. The nav stays hidden until the toggle is tapped, then opens as a full-width vertical list inside the collapsible header area (`site-header--nav-open`, wired by `site-header.js`; closes on link tap, outside click, or Escape). Pages without a `nav` config get no toggle button.
 
 ## Design Tokens
 
@@ -254,6 +258,8 @@ Rendered by `site-header.js` from the `nav` config. Active state is automatic.
 | `.main-nav-item` | Nav item wrapper |
 | `.main-nav-link` | Nav link (uppercase, bold) |
 | `.main-nav-link.active` | Active nav link (primary color) |
+| `.main-nav-toggle` | Hamburger button (mobile only) |
+| `.site-header--nav-open` | Open state for the mobile nav |
 
 ### Project links
 
