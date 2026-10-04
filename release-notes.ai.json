@@ -12,7 +12,35 @@
       "details": [
         "The release note cache is stored separately while reworded titles remain stable across runs."
       ]
+    },
+    "653ad0a092cc63bfeacf1858cd6a90f58dc97903": {
+      "title": "Updated documentation",
+      "details": []
+    },
+    "63a861e5e8cb1eade7f4ecb47178aa52a8d18dac": {
+      "title": "Migrated production domain to structuredchaos.dev",
+      "details": []
+    },
+    "b673056be92bb48848e35c0dedce765a05028920": {
+      "title": "Added mobile-friendly hamburger menus for navigation",
+      "details": [
+        "Global bar and site navigation collapse into hamburger menus on small screens",
+        "Project links shrink to icons to fit mobile layouts",
+        "Sidebar and table layouts adjust for single-column view"
+      ]
+    },
+    "368fc7307b64ef9460c0a26d06ebb8537a3bdc83": {
+      "title": "Added separator option for footer links",
+      "details": [
+        "Footer link configuration now supports divider entries"
+      ]
+    },
+    "0cd62a2b714dcee047f94a1ec939c3c04414a524": {
+      "title": "Documented mobile hamburger menu behavior",
+      "details": [
+        "Documentation covers global bar and site nav mobile interactions"
+      ]
     }
   },
-  "updatedAt": "2026-09-20T21:27:45.468Z"
+  "updatedAt": "2026-10-04T12:24:33.340Z"
 }
