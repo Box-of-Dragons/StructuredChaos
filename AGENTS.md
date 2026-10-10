@@ -87,10 +87,14 @@ Pushes no longer deploy — the GitHub webhook was removed. `scripts/webhook-ser
 
 ### Manual deploy (fallback)
 
+SSH into the VPS and run:
+
 ```bash
-cd /var/www/structured-chaos
+cd /home/structuredchaos/htdocs/structuredchaos.dev
 git pull origin master
 ```
+
+The deploy secrets for this repo are `PROD_USER=structuredchaos` and `PROD_PATH=/home/structuredchaos/htdocs/structuredchaos.dev` — nginx serves `structuredchaos.dev` directly from that working tree. The `misssponto`/`misssponto-*` users and `misssponto.me.uk` docroots are being phased out in favour of the `structuredchaos`/`sc-*` users on `structuredchaos.dev`.
 
 ## Git Conventions
 
