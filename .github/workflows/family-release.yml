@@ -40,6 +40,10 @@ on:
         description: Protected release branch (e.g. master). When set and the run was dispatched on another branch, the dispatch branch is merged in via PR and the tag lands on the merge commit.
         type: string
         default: ''
+      release-title-suffix:
+        description: Optional suffix appended to the sync PR/merge title (e.g. "-beta.3" for prerelease mirrors)
+        type: string
+        default: ''
       deploy:
         description: Deploy to the VPS after a successful release run
         type: boolean
@@ -173,6 +177,7 @@ jobs:
           HEAD_BRANCH: ${{ github.ref_name }}
           SHOULD_RELEASE: ${{ steps.plan.outputs.should_release }}
           RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+          TITLE_SUFFIX: ${{ inputs.release-title-suffix }}
         run: |
           git fetch origin "$RELEASE_BRANCH" "$HEAD_BRANCH"
           if [ "$(git rev-list --count origin/$RELEASE_BRANCH..HEAD)" -eq 0 ]; then
@@ -181,7 +186,7 @@ jobs:
             exit 0
           fi
           if [ "$SHOULD_RELEASE" = "true" ]; then
-            TITLE="Release $RELEASE_TAG"
+            TITLE="Release $RELEASE_TAG$TITLE_SUFFIX"
           else
             TITLE="chore(release): merge $HEAD_BRANCH into $RELEASE_BRANCH"
           fi
